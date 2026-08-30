@@ -5,3 +5,162 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  ANALYST
+  VIEWER
+}
+
+enum Sentiment {
+  POS
+  NEU
+  NEG
+}
+
+enum FeedbackStatus {
+  NEW
+  REVIEWED
+  ACTIONED
+}
+
+// ─────────────────────────────────────────────
+// Workspace
+// ─────────────────────────────────────────────
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  users    User[]
+  feedback Feedback[]
+  themes   Theme[]
+  reports  Report[]
+}
+
+// ─────────────────────────────────────────────
+// User
+// ─────────────────────────────────────────────
+
+model User {
+  id           String @id @default(cuid())
+  name         String
+  email        String @unique
+  passwordHash String
+  role         Role   @default(VIEWER)
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  reports Report[]
+
+  @@index([workspaceId])
+}
+
+// ─────────────────────────────────────────────
+// Feedback
+// ─────────────────────────────────────────────
+
+model Feedback {
+  id            String  @id @default(cuid())
+  content       String
+  channel       String
+  sourceRef     String?
+  customerLabel String?
+
+  sentiment      Sentiment?
+  sentimentScore Float?
+
+  status    FeedbackStatus @default(NEW)
+  createdAt DateTime       @default(now())
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  themes    FeedbackTheme[]
+  embedding Embedding?
+
+  @@index([workspaceId])
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, channel])
+  @@index([workspaceId, sentiment])
+  @@index([workspaceId, status])
+}
+
+// ─────────────────────────────────────────────
+// Theme
+// ─────────────────────────────────────────────
+
+model Theme {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  color       String?
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  feedback FeedbackTheme[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+}
+
+// ─────────────────────────────────────────────
+// FeedbackTheme
+// Join table: Feedback <-> Theme
+// ─────────────────────────────────────────────
+
+model FeedbackTheme {
+  feedbackId String
+  themeId    String
+
+  confidence Float?
+
+  feedback Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  theme    Theme    @relation(fields: [themeId], references: [id], onDelete: Cascade)
+
+  @@id([feedbackId, themeId])
+  @@index([themeId])
+}
+
+// ─────────────────────────────────────────────
+// Embedding
+// ─────────────────────────────────────────────
+
+model Embedding {
+  id         String @id @default(cuid())
+  feedbackId String @unique
+
+  // PostgreSQL pgvector column.
+  vector Unsupported("vector")
+
+  feedback Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────────────────────────────
+// Report
+// ─────────────────────────────────────────────
+
+model Report {
+  id          String   @id @default(cuid())
+  title       String
+  periodStart DateTime
+  periodEnd   DateTime
+  contentJson Json
+  createdAt   DateTime @default(now())
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  generatedById String
+  generatedBy   User   @relation(fields: [generatedById], references: [id])
+
+  @@index([workspaceId])
+  @@index([workspaceId, createdAt])
+}

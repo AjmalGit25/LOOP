@@ -6,12 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "seed": "ts-node prisma/seed.ts",
+    "seed": "prisma db seed",
     "lint": "eslint"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",
-    "@prisma/client": "^7.9.1",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
     "axios": "^1.19.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -19,7 +20,8 @@
     "mongoose": "^9.9.3",
     "next": "16.3.2",
     "next-auth": "^4.24.15",
-    "prisma": "^7.9.1",
+    "pg": "^8.23.0",
+    "prisma": "^7.10.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "recharts": "^3.10.1",
@@ -33,6 +35,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.2",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   }
 }
