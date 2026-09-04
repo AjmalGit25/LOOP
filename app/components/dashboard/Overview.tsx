@@ -87,7 +87,7 @@ export default function Overview() {
             : (
               <ResponsiveContainer width='100%' height={180}>
                 <PieChart>
-                  <Pie data={stats.byStatus} dataKey='count' nameKey='status' cx='50%' cy='50%' outerRadius={60} label={({ status }) => status}>
+                  <Pie data={stats.byStatus} dataKey='count' nameKey='status' cx='50%' cy='50%' outerRadius={60} label={({ name }) => name}>
                     {stats.byStatus.map(entry => (
                       <Cell key={entry.status} fill={STATUS_COLORS[entry.status] ?? '#6b7280'} />
                     ))}
