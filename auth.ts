@@ -1,7 +1,5 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
-import bcrypt from 'bcryptjs'
-import { prisma } from '@/lib/prisma'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: 'jwt' },
@@ -15,8 +13,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         const email = credentials?.email as string
         const password = credentials?.password as string
-
         if (!email || !password) return null
+
+        // Lazy — never bundled into edge/middleware
+        const { prisma } = await import('@/lib/prisma')
+        const { default: bcrypt } = await import('bcryptjs')
 
         const user = await prisma.user.findUnique({ where: { email } })
         if (!user) return null

@@ -50,6 +50,18 @@ export default function DashboardPage() {
           ))}
         </div>
 
+        {/* Admin: Members link */}
+        {session.user.role === 'ADMIN' && (
+          <div className='px-5'>
+            <button
+              onClick={() => router.push('/dashboard/members')}
+              className='w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-sm font-medium py-2 rounded-lg transition-colors'
+            >
+              Manage Members →
+            </button>
+          </div>
+        )}
+
         {/* Logout */}
         <div className='p-5'>
           <button
