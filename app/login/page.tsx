@@ -36,7 +36,7 @@ export default function LoginPage() {
 
   return (
     <div className='min-h-screen bg-black flex items-center justify-center'>
-      <div className='w-full max-w-100 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden'>
+      <div className='mx-5 w-full max-w-100 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden'>
 
         {/* Header */}
         <div className='p-5 flex flex-col justify-center gap-3'>
