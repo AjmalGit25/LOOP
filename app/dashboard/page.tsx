@@ -7,6 +7,7 @@ import DashboardNav from '@/app/components/dashboard/DashboardNav'
 import Overview from '@/app/components/dashboard/Overview'
 import FeedbackInbox from '@/app/components/dashboard/FeedbackInbox'
 import AdminPanel from '@/app/components/dashboard/AdminPanel'
+import SimulateChannel from '@/app/components/dashboard/SimulateChannel'
 
 type Tab = 'overview' | 'feedback' | 'admin'
 
@@ -14,6 +15,7 @@ export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('overview')
+  const [overviewKey, setOverviewKey] = useState(0)
 
   useEffect(() => {
     if (status === 'unauthenticated') router.replace('/login')
@@ -90,7 +92,12 @@ export default function DashboardPage() {
 
           {tab === 'overview' && (
             <div className='flex flex-col gap-6'>
-              <Overview />
+              <Overview key={overviewKey} />
+
+              {/* Simulate channel — ANALYST/ADMIN only */}
+              {(isAdmin || isAnalyst) && (
+                <SimulateChannel onDone={() => setOverviewKey(k => k + 1)} />
+              )}
 
               {/* Role-specific quick actions */}
               {(isAdmin || isAnalyst) && (

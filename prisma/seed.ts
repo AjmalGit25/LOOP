@@ -1,229 +1,66 @@
-import "dotenv/config";
+import 'dotenv/config'
+import { PrismaClient, Role, FeedbackStatus, Sentiment } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { FEEDBACK_RECORDS } from '../lib/feedback-data'
+import bcrypt from 'bcryptjs'
 
-import {
-  PrismaClient,
-  Role,
-  Sentiment,
-  FeedbackStatus,
-} from "@prisma/client";
-
-import { PrismaPg } from "@prisma/adapter-pg";
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
-});
-
-const prisma = new PrismaClient({
-  adapter,
-});
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
+const prisma = new PrismaClient({ adapter })
 
 async function main() {
-  console.log("🌱 Starting database seed...");
-
-  // ─────────────────────────────────────────
-  // 1. Demo Workspace
-  // ─────────────────────────────────────────
+  console.log('🌱 Starting seed...')
 
   const workspace = await prisma.workspace.create({
-    data: {
-      name: "LOOP Demo Workspace",
-    },
-  });
+    data: { name: 'LOOP Demo Workspace' },
+  })
 
-  console.log(`Created workspace: ${workspace.name}`);
+  const hash = await bcrypt.hash('demo1234', 12)
 
-  // ─────────────────────────────────────────
-  // 2. Demo Users
-  // ─────────────────────────────────────────
+  const [admin, analyst, viewer] = await Promise.all([
+    prisma.user.create({ data: { name: 'Demo Admin',   email: 'admin@loop-demo.com',   passwordHash: hash, role: Role.ADMIN,   workspaceId: workspace.id } }),
+    prisma.user.create({ data: { name: 'Demo Analyst', email: 'analyst@loop-demo.com', passwordHash: hash, role: Role.ANALYST, workspaceId: workspace.id } }),
+    prisma.user.create({ data: { name: 'Demo Viewer',  email: 'viewer@loop-demo.com',  passwordHash: hash, role: Role.VIEWER,  workspaceId: workspace.id } }),
+  ])
 
-  // TODO:
-  // Replace these placeholder hashes with real bcrypt hashes
-  // when authentication is implemented.
+  console.log(`✓ Users: ${admin.email}, ${analyst.email}, ${viewer.email}`)
 
-  const admin = await prisma.user.create({
-    data: {
-      name: "Demo Admin",
-      email: "admin@loop-demo.com",
-      passwordHash: "TEMP_HASH_ADMIN",
-      role: Role.ADMIN,
-      workspaceId: workspace.id,
-    },
-  });
+  await prisma.theme.createMany({
+    data: [
+      { name: 'Performance',      color: '#10B981', workspaceId: workspace.id },
+      { name: 'Onboarding',       color: '#6366F1', workspaceId: workspace.id },
+      { name: 'Billing',          color: '#F59E0B', workspaceId: workspace.id },
+      { name: 'Mobile',           color: '#EC4899', workspaceId: workspace.id },
+      { name: 'Integrations',     color: '#8B5CF6', workspaceId: workspace.id },
+      { name: 'Feature Requests', color: '#3B82F6', workspaceId: workspace.id },
+    ],
+  })
 
-  const analyst = await prisma.user.create({
-    data: {
-      name: "Demo Analyst",
-      email: "analyst@loop-demo.com",
-      passwordHash: "TEMP_HASH_ANALYST",
-      role: Role.ANALYST,
-      workspaceId: workspace.id,
-    },
-  });
+  console.log('✓ Themes created')
 
-  const viewer = await prisma.user.create({
-    data: {
-      name: "Demo Viewer",
-      email: "viewer@loop-demo.com",
-      passwordHash: "TEMP_HASH_VIEWER",
-      role: Role.VIEWER,
-      workspaceId: workspace.id,
-    },
-  });
+  const statuses = [FeedbackStatus.NEW, FeedbackStatus.NEW, FeedbackStatus.REVIEWED, FeedbackStatus.ACTIONED]
 
-  console.log("Created demo users:");
-  console.log(`- ${admin.email} [ADMIN]`);
-  console.log(`- ${analyst.email} [ANALYST]`);
-  console.log(`- ${viewer.email} [VIEWER]`);
+  await prisma.feedback.createMany({
+    data: FEEDBACK_RECORDS.map((r, i) => ({
+      content:       r.content,
+      channel:       r.channel,
+      customerLabel: r.customerLabel,
+      sentiment:     r.sentiment as Sentiment,
+      sentimentScore: r.sentimentScore,
+      status:        statuses[i % statuses.length],
+      workspaceId:   workspace.id,
+      createdAt:     new Date(Date.now() - r.daysAgo * 24 * 60 * 60 * 1000),
+    })),
+  })
 
-  // ─────────────────────────────────────────
-  // 3. Themes
-  // ─────────────────────────────────────────
-
-  const themes = await Promise.all([
-    prisma.theme.create({
-      data: {
-        name: "Onboarding",
-        description: "Feedback related to signup, setup and getting started.",
-        color: "#6366F1",
-        workspaceId: workspace.id,
-      },
-    }),
-
-    prisma.theme.create({
-      data: {
-        name: "Performance",
-        description: "Feedback about speed, loading and responsiveness.",
-        color: "#10B981",
-        workspaceId: workspace.id,
-      },
-    }),
-
-    prisma.theme.create({
-      data: {
-        name: "Billing",
-        description: "Invoices, payments and billing-related feedback.",
-        color: "#F59E0B",
-        workspaceId: workspace.id,
-      },
-    }),
-
-    prisma.theme.create({
-      data: {
-        name: "Mobile Experience",
-        description: "Feedback about the mobile web/app experience.",
-        color: "#EC4899",
-        workspaceId: workspace.id,
-      },
-    }),
-
-    prisma.theme.create({
-      data: {
-        name: "Authentication",
-        description: "Login, SSO, password and account-access feedback.",
-        color: "#8B5CF6",
-        workspaceId: workspace.id,
-      },
-    }),
-  ]);
-
-  console.log(`Created ${themes.length} themes`);
-
-  // ─────────────────────────────────────────
-  // 4. Feedback
-  // ─────────────────────────────────────────
-
-  const feedbackData = [
-    {
-      content:
-        "Onboarding took forever — I couldn't figure out how to invite my team.",
-      channel: "Support ticket",
-      customerLabel: "Customer A",
-      sentiment: Sentiment.NEG,
-      sentimentScore: -0.85,
-    },
-
-    {
-      content:
-        "The new dashboard is gorgeous and finally fast. Huge improvement.",
-      channel: "App store review",
-      customerLabel: "Customer B",
-      sentiment: Sentiment.POS,
-      sentimentScore: 0.9,
-    },
-
-    {
-      content:
-        "It does the job, but the mobile experience needs work.",
-      channel: "NPS survey",
-      customerLabel: "Customer C",
-      sentiment: Sentiment.NEU,
-      sentimentScore: 0.05,
-    },
-
-    {
-      content:
-        "Prospect wants SSO before they'll sign — third time this month.",
-      channel: "Sales call note",
-      customerLabel: "Prospect D",
-      sentiment: Sentiment.NEG,
-      sentimentScore: -0.7,
-    },
-
-    {
-      content:
-        "Love the new export feature, saved me an hour today.",
-      channel: "Community post",
-      customerLabel: "Customer E",
-      sentiment: Sentiment.POS,
-      sentimentScore: 0.85,
-    },
-
-    {
-      content:
-        "Billing page keeps timing out when I try to download an invoice.",
-      channel: "Support ticket",
-      customerLabel: "Customer F",
-      sentiment: Sentiment.NEG,
-      sentimentScore: -0.8,
-    },
-
-    // Add more realistic feedback here.
-    // The final seed must contain at least 120 items.
-  ];
-
-  // ─────────────────────────────────────────
-  // 5. Insert Feedback
-  // ─────────────────────────────────────────
-
-  for (const item of feedbackData) {
-    await prisma.feedback.create({
-      data: {
-        content: item.content,
-        channel: item.channel,
-        customerLabel: item.customerLabel,
-
-        sentiment: item.sentiment,
-        sentimentScore: item.sentimentScore,
-
-        status: FeedbackStatus.NEW,
-
-        workspaceId: workspace.id,
-      },
-    });
-  }
-
-  console.log(`Created ${feedbackData.length} feedback items`);
-
-  console.log("✅ Seed completed successfully!");
+  console.log(`✓ ${FEEDBACK_RECORDS.length} feedback records inserted`)
+  console.log('✅ Seed complete!')
+  console.log('')
+  console.log('Demo credentials (password: demo1234):')
+  console.log('  admin@loop-demo.com   [ADMIN]')
+  console.log('  analyst@loop-demo.com [ANALYST]')
+  console.log('  viewer@loop-demo.com  [VIEWER]')
 }
 
 main()
-  .catch((error) => {
-    console.error("❌ Seed failed:");
-    console.error(error);
-
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .catch(e => { console.error('❌ Seed failed:', e); process.exit(1) })
+  .finally(() => prisma.$disconnect())

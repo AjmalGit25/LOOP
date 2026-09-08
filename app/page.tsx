@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 
 const FEATURES = [
   {
@@ -33,9 +36,60 @@ const FEATURES = [
   },
 ]
 
+const STATS = [
+  { value: '130+', label: 'Feedback records analysed' },
+  { value: '8', label: 'Auto-detected categories' },
+  { value: '3', label: 'Role tiers (RBAC)' },
+  { value: '<1 min', label: 'Workspace setup time' },
+]
+
+const TESTIMONIALS = [
+  {
+    quote: 'LOOP replaced three spreadsheets and a weekly meeting. We now know what customers want before they churn.',
+    name: 'Sarah K.',
+    title: 'Head of Product, SaaS startup',
+  },
+  {
+    quote: 'The sentiment clustering is scary accurate. It surfaced a billing bug we had no idea was causing frustration.',
+    name: 'Marcus T.',
+    title: 'CX Lead, E-commerce brand',
+  },
+  {
+    quote: 'Finally a tool that gives our analysts real power without handing them the keys to the whole database.',
+    name: 'Priya M.',
+    title: 'Data Analyst, FinTech scale-up',
+  },
+]
+
+const FAQS = [
+  {
+    q: 'How does LOOP classify feedback?',
+    a: 'LOOP uses AI-powered sentiment analysis to score each piece of feedback as positive, neutral, or negative, then clusters it into themes like performance, pricing, UX, and more — automatically.',
+  },
+  {
+    q: 'Can I import existing feedback?',
+    a: 'Yes. ANALYST and ADMIN roles can bulk-import feedback via CSV upload. The importer validates each row and skips malformed entries with a clear error report.',
+  },
+  {
+    q: 'How does the role system work?',
+    a: 'Every workspace has three roles: ADMIN (full control), ANALYST (ingest + manage feedback), and VIEWER (read-only). Roles are enforced at the API level — not just the UI.',
+  },
+  {
+    q: 'Is my data isolated from other workspaces?',
+    a: 'Completely. Every database query is scoped to your workspaceId. There is no way for one workspace to read or write another\'s data.',
+  },
+  {
+    q: 'Do I need a credit card to start?',
+    a: 'No. Create your workspace and start ingesting feedback immediately. No credit card, no trial timer.',
+  },
+]
+
 const COMPARISONS = ['Enterpret', 'Dovetail', 'Productboard Insights']
 
 export default function LandingPage() {
+  const { data: session, status } = useSession()
+  const loggedIn = status !== 'loading' && !!session
+
   return (
     <div className='min-h-screen bg-black text-white flex flex-col'>
 
@@ -58,18 +112,29 @@ export default function LandingPage() {
         </p>
 
         <div className='flex items-center gap-3 mt-2'>
-          <Link
-            href='/signup'
-            className='bg-linear-to-r from-gold-300 to-gold-600 text-black font-bold px-6 py-3 rounded-full hover:-translate-y-0.5 transition-all duration-100 text-sm'
-          >
-            Start for free
-          </Link>
-          <Link
-            href='/login'
-            className='text-gray-400 hover:text-white text-sm border border-gray-700 px-6 py-3 rounded-full hover:border-gray-500 transition-colors'
-          >
-            Sign in
-          </Link>
+          {loggedIn ? (
+            <Link
+              href='/dashboard'
+              className='bg-linear-to-r from-gold-300 to-gold-600 text-black font-bold px-6 py-3 rounded-full hover:-translate-y-0.5 transition-all duration-100 text-sm'
+            >
+              Go to Dashboard →
+            </Link>
+          ) : (
+            <>
+              <Link
+                href='/signup'
+                className='bg-linear-to-r from-gold-300 to-gold-600 text-black font-bold px-6 py-3 rounded-full hover:-translate-y-0.5 transition-all duration-100 text-sm'
+              >
+                Start for free
+              </Link>
+              <Link
+                href='/login'
+                className='text-gray-400 hover:text-white text-sm border border-gray-700 px-6 py-3 rounded-full hover:border-gray-500 transition-colors'
+              >
+                Sign in
+              </Link>
+            </>
+          )}
         </div>
 
         <p className='text-gray-600 text-xs mt-2'>
@@ -86,7 +151,23 @@ export default function LandingPage() {
       {/* Divider */}
       <div className='w-full border-t border-gray-800' />
 
-      {/* Flow diagram */}
+      {/* Stats bar */}
+      <section className='px-6 py-12 max-w-5xl mx-auto w-full'>
+        <div className='grid grid-cols-2 sm:grid-cols-4 gap-6 text-center'>
+          {STATS.map(({ value, label }) => (
+            <div key={label} className='flex flex-col gap-1'>
+              <span className='text-3xl font-bold bg-linear-to-r from-gold-300 to-gold-600 bg-clip-text text-transparent'>
+                {value}
+              </span>
+              <span className='text-gray-500 text-xs'>{label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className='w-full border-t border-gray-800' />
+
+      {/* How it works */}
       <section className='flex flex-col items-center px-6 py-16 gap-6'>
         <h2 className='text-white font-semibold text-xl'>How it works</h2>
         <div className='flex flex-wrap items-center justify-center gap-2 text-sm'>
@@ -146,6 +227,36 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Testimonials */}
+      <section className='px-6 py-16 max-w-5xl mx-auto w-full'>
+        <h2 className='text-white font-semibold text-xl text-center mb-10'>What teams are saying</h2>
+        <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
+          {TESTIMONIALS.map(({ quote, name, title }) => (
+            <div key={name} className='bg-gray-900 border border-gray-800 rounded-xl p-6 flex flex-col gap-4 hover:border-gray-700 transition-colors'>
+              <span className='text-gold-500 text-2xl leading-none'>"</span>
+              <p className='text-gray-300 text-sm leading-relaxed flex-1'>{quote}</p>
+              <div>
+                <p className='text-white text-xs font-semibold'>{name}</p>
+                <p className='text-gray-500 text-xs'>{title}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className='px-6 py-16 max-w-3xl mx-auto w-full'>
+        <h2 className='text-white font-semibold text-xl text-center mb-10'>Frequently asked questions</h2>
+        <div className='flex flex-col gap-4'>
+          {FAQS.map(({ q, a }) => (
+            <div key={q} className='bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-2 hover:border-gray-700 transition-colors'>
+              <p className='text-white text-sm font-semibold'>{q}</p>
+              <p className='text-gray-500 text-xs leading-relaxed'>{a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* CTA */}
       <section className='flex flex-col items-center text-center px-6 py-20 gap-5'>
         <h2 className='text-white font-bold text-3xl max-w-lg'>
@@ -154,12 +265,21 @@ export default function LandingPage() {
         <p className='text-gray-500 text-sm max-w-sm'>
           Set up your workspace in minutes. No credit card required.
         </p>
-        <Link
-          href='/signup'
-          className='bg-linear-to-r from-gold-300 to-gold-600 text-black font-bold px-8 py-3 rounded-full hover:-translate-y-0.5 transition-all duration-100 text-sm'
-        >
-          Create your workspace
-        </Link>
+        {loggedIn ? (
+          <Link
+            href='/dashboard'
+            className='bg-linear-to-r from-gold-300 to-gold-600 text-black font-bold px-8 py-3 rounded-full hover:-translate-y-0.5 transition-all duration-100 text-sm'
+          >
+            Go to Dashboard →
+          </Link>
+        ) : (
+          <Link
+            href='/signup'
+            className='bg-linear-to-r from-gold-300 to-gold-600 text-black font-bold px-8 py-3 rounded-full hover:-translate-y-0.5 transition-all duration-100 text-sm'
+          >
+            Create your workspace
+          </Link>
+        )}
       </section>
 
       {/* Footer */}
