@@ -8,7 +8,9 @@ export async function GET() {
 
   const wid = session.user.workspaceId
 
-  const [total, byStatus, byChannel, recent] = await Promise.all([
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
+  const [total, byStatus, byChannel, bySentiment, recent, themeRows] = await Promise.all([
     prisma.feedback.count({ where: { workspaceId: wid } }),
 
     prisma.feedback.groupBy({
@@ -23,18 +25,41 @@ export async function GET() {
       _count: { channel: true },
     }),
 
-    // Last 7 days daily volume
+    prisma.feedback.groupBy({
+      by: ['sentiment'],
+      where: { workspaceId: wid, sentiment: { not: null } },
+      _count: { sentiment: true },
+    }),
+
     prisma.feedback.findMany({
-      where: {
-        workspaceId: wid,
-        createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-      },
+      where: { workspaceId: wid, createdAt: { gte: sevenDaysAgo } },
       select: { createdAt: true },
       orderBy: { createdAt: 'asc' },
     }),
+
+    // Top themes by feedback count
+    prisma.feedbackTheme.groupBy({
+      by: ['themeId'],
+      where: { feedback: { workspaceId: wid } },
+      _count: { themeId: true },
+      orderBy: { _count: { themeId: 'desc' } },
+      take: 6,
+    }),
   ])
 
-  // Build daily buckets
+  // Resolve theme names
+  const themeIds = themeRows.map(r => r.themeId)
+  const themes = themeIds.length
+    ? await prisma.theme.findMany({ where: { id: { in: themeIds } }, select: { id: true, name: true, color: true } })
+    : []
+  const themeMap = Object.fromEntries(themes.map(t => [t.id, t]))
+  const topThemes = themeRows.map(r => ({
+    name:  themeMap[r.themeId]?.name  ?? r.themeId,
+    color: themeMap[r.themeId]?.color ?? null,
+    count: r._count.themeId,
+  }))
+
+  // Build daily buckets (last 7 days)
   const dailyMap: Record<string, number> = {}
   for (let i = 6; i >= 0; i--) {
     const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000)
@@ -48,8 +73,10 @@ export async function GET() {
 
   return NextResponse.json({
     total,
-    byStatus: byStatus.map(r => ({ status: r.status, count: r._count.status })),
-    byChannel: byChannel.map(r => ({ channel: r.channel, count: r._count.channel })),
+    byStatus:    byStatus.map(r => ({ status: r.status, count: r._count.status })),
+    byChannel:   byChannel.map(r => ({ channel: r.channel, count: r._count.channel })),
+    bySentiment: bySentiment.map(r => ({ sentiment: r.sentiment, count: r._count.sentiment })),
+    topThemes,
     daily,
   })
 }
