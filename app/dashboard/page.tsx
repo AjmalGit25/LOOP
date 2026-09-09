@@ -45,7 +45,7 @@ export default function DashboardPage() {
     <div className='flex min-h-screen bg-black'>
       <DashboardNav role={role} name={session.user.name ?? ''} />
 
-      <main className='flex-1 flex flex-col min-w-0'>
+      <main className='flex-1 flex flex-col min-w-0 h-screen'>
 
         {/* Top bar */}
         <div className='border-b border-gray-800 px-6 py-4 flex items-center justify-between'>

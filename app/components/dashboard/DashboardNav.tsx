@@ -18,7 +18,7 @@ export default function DashboardNav({ role, name }: Props) {
   ].filter(l => l.roles.includes(role))
 
   return (
-    <aside className='w-56 shrink-0 bg-gray-950 border-r border-gray-800 flex flex-col justify-between py-6 px-3'>
+    <aside className='w-56 shrink-0 bg-gray-950 border-r border-gray-800 flex flex-col justify-between h-screen py-6 px-3'>
       <div className='flex flex-col gap-1'>
         {/* Logo */}
         <Link href='/' className='text-white font-bold text-lg tracking-tight px-3 mb-4 block'>
