@@ -26,13 +26,23 @@ const SENTIMENT_STYLE: Record<string, string> = {
 }
 const SENTIMENT_LABEL: Record<string, string> = { POS: '▲ Positive', NEU: '● Neutral', NEG: '▼ Negative' }
 
+type Props = {
+  initialThemeId?:   string
+  initialThemeName?: string
+  onBack?: () => void
+}
+
 const DEFAULT_COLOR = '#6b7280'
 const LIMIT = 10
 
-export default function ThemeExplorer() {
+export default function ThemeExplorer({ initialThemeId, initialThemeName, onBack }: Props) {
   const [themes, setThemes]         = useState<Theme[]>([])
   const [loadingThemes, setLoadingThemes] = useState(true)
-  const [selected, setSelected]     = useState<Theme | null>(null)
+  const [selected, setSelected]     = useState<Theme | null>(
+    initialThemeId && initialThemeName
+      ? { id: initialThemeId, name: initialThemeName, description: null, color: null, count: 0 }
+      : null
+  )
 
   const [drillItems, setDrillItems] = useState<DrillFeedback[]>([])
   const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: LIMIT, total: 0, totalPages: 1 })
@@ -42,9 +52,18 @@ export default function ThemeExplorer() {
   useEffect(() => {
     fetch('/api/themes')
       .then(r => r.json())
-      .then(d => { setThemes(d.themes ?? []); setLoadingThemes(false) })
+      .then(d => {
+        const list: Theme[] = d.themes ?? []
+        setThemes(list)
+        setLoadingThemes(false)
+        // If we were drilled into from Trends, enrich the selected item with real data
+        if (initialThemeId) {
+          const found = list.find(t => t.id === initialThemeId)
+          if (found) setSelected(found)
+        }
+      })
       .catch(() => setLoadingThemes(false))
-  }, [])
+  }, [initialThemeId])
 
   const fetchDrill = useCallback(async (themeId: string, page: number) => {
     setLoadingDrill(true)
@@ -57,6 +76,13 @@ export default function ThemeExplorer() {
       setLoadingDrill(false)
     }
   }, [])
+
+  useEffect(() => {
+    if (initialThemeId) {
+      setDrillPage(1)
+      fetchDrill(initialThemeId, 1)
+    }
+  }, [initialThemeId, fetchDrill])
 
   function openTheme(theme: Theme) {
     setSelected(theme)
@@ -171,7 +197,7 @@ export default function ThemeExplorer() {
       {/* Back + header */}
       <div className='flex items-center gap-3'>
         <button
-          onClick={() => setSelected(null)}
+          onClick={() => { setSelected(null); onBack?.() }}
           className='flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition-colors'
         >
           <FiArrowLeft size={14} /> Themes

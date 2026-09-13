@@ -10,14 +10,16 @@ import AdminPanel from '@/app/components/dashboard/AdminPanel'
 import SimulateChannel from '@/app/components/dashboard/SimulateChannel'
 import ClassifyButton from '@/app/components/dashboard/ClassifyButton'
 import ThemeExplorer from '@/app/components/dashboard/ThemeExplorer'
+import TrendsView from '@/app/components/dashboard/TrendsView'
 
-type Tab = 'overview' | 'feedback' | 'analytics' | 'themes' | 'admin'
+type Tab = 'overview' | 'feedback' | 'analytics' | 'themes' | 'trends' | 'admin'
 
 const TAB_LABELS: Record<Tab, string> = {
   overview:  'Overview',
   feedback:  'Feedback Inbox',
   analytics: 'Analytics',
   themes:    'Themes',
+  trends:    'Trends',
   admin:     'Members',
 }
 
@@ -26,6 +28,14 @@ export default function DashboardPage() {
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('overview')
   const [overviewKey, setOverviewKey] = useState(0)
+  const [drillThemeId, setDrillThemeId]     = useState<string | null>(null)
+  const [drillThemeName, setDrillThemeName] = useState<string | null>(null)
+
+  function drillToTheme(id: string, name: string) {
+    setDrillThemeId(id)
+    setDrillThemeName(name)
+    setTab('themes')
+  }
 
   useEffect(() => {
     if (status === 'unauthenticated') router.replace('/login')
@@ -50,6 +60,7 @@ export default function DashboardPage() {
     { id: 'feedback',  label: 'Feedback Inbox', show: true },
     { id: 'analytics', label: 'Analytics',      show: isAdmin || isAnalyst },
     { id: 'themes',    label: 'Themes',         show: true },
+    { id: 'trends',    label: 'Trends',         show: true },
     { id: 'admin',     label: 'Members',        show: isAdmin },
   ]
 
@@ -129,6 +140,14 @@ export default function DashboardPage() {
                   <span className='text-gray-500 text-xs'>AI-clustered topics with drill-down</span>
                 </button>
 
+                <button
+                  onClick={() => setTab('trends')}
+                  className='bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-xl p-4 text-left flex flex-col gap-1 transition-colors'
+                >
+                  <span className='text-white text-sm font-medium'>Trends →</span>
+                  <span className='text-gray-500 text-xs'>Theme volume over time + spike detection</span>
+                </button>
+
                 {isAdmin && (
                   <button
                     onClick={() => setTab('admin')}
@@ -188,7 +207,16 @@ export default function DashboardPage() {
           )}
 
           {/* ── Themes ── */}
-          {tab === 'themes' && <ThemeExplorer />}
+          {tab === 'themes' && (
+            <ThemeExplorer
+              initialThemeId={drillThemeId ?? undefined}
+              initialThemeName={drillThemeName ?? undefined}
+              onBack={() => { setDrillThemeId(null); setDrillThemeName(null) }}
+            />
+          )}
+
+          {/* ── Trends ── */}
+          {tab === 'trends' && <TrendsView onDrillTheme={drillToTheme} />}
 
           {/* ── Members (ADMIN only) ── */}
           {tab === 'admin' && isAdmin && <AdminPanel currentUserId={session.user.id} />}
