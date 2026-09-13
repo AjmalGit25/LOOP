@@ -1,22 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth-guard'
 import { prisma } from '@/lib/prisma'
-import { classifyBatch } from '@/lib/ai'
+import { classifyFeedback, persistClassification } from '@/lib/ai'
 
-// Max items per batch call — keeps latency and cost predictable
-const BATCH_SIZE = 20
+const MAX_BATCH = 50
 
+// GET — return how many items still need classification
+export async function GET() {
+  const { session, response } = await requireRole('ADMIN', 'ANALYST')
+  if (response) return response
+
+  const unclassified = await prisma.feedback.count({
+    where: { workspaceId: session.user.workspaceId, sentiment: null },
+  })
+
+  const total = await prisma.feedback.count({
+    where: { workspaceId: session.user.workspaceId },
+  })
+
+  return NextResponse.json({ unclassified, total })
+}
+
+// POST — back-fill unclassified feedback in a batch
 export async function POST(req: NextRequest) {
   const { session, response } = await requireRole('ADMIN', 'ANALYST')
   if (response) return response
 
   const wid = session.user.workspaceId
-
-  // Parse optional limit from body
   const body = await req.json().catch(() => ({}))
-  const limit = Math.min(Number(body.limit) || BATCH_SIZE, 50)
+  const limit = Math.min(Number(body.limit) || 20, MAX_BATCH)
 
-  // Only fetch feedback that has NOT been classified yet (sentiment is null)
   const unclassified = await prisma.feedback.findMany({
     where: { workspaceId: wid, sentiment: null },
     select: { id: true, content: true },
@@ -25,55 +38,32 @@ export async function POST(req: NextRequest) {
   })
 
   if (unclassified.length === 0) {
-    return NextResponse.json({ classified: 0, message: 'All feedback is already classified.' })
+    return NextResponse.json({ classified: 0, skipped: 0, message: 'All feedback is already classified.' })
   }
 
-  // Call Claude for each item sequentially
-  const results = await classifyBatch(unclassified)
-
-  // Resolve theme names → theme IDs for this workspace
-  const allThemeNames = [...new Set(results.flatMap(r => r.classification.themes))]
-  const workspaceThemes = await prisma.theme.findMany({
-    where: { workspaceId: wid, name: { in: allThemeNames } },
-    select: { id: true, name: true },
-  })
-  const themeMap = Object.fromEntries(workspaceThemes.map(t => [t.name.toLowerCase(), t.id]))
-
-  // Persist each classification in a transaction
   let classified = 0
-  for (const { id, classification } of results) {
-    const { sentiment, sentimentScore, themes, summary } = classification
+  let skipped = 0
 
-    // Resolve theme IDs — skip any theme name not in this workspace
-    const themeIds = themes
-      .map(name => themeMap[name.toLowerCase()])
-      .filter(Boolean) as string[]
-
-    await prisma.$transaction([
-      prisma.feedback.update({
-        where: { id },
-        data: {
-          sentiment:      sentiment as never,
-          sentimentScore,
-          sourceRef:      summary,   // store AI summary in sourceRef for display
-        },
-      }),
-      // Upsert FeedbackTheme links (skip duplicates)
-      ...themeIds.map(themeId =>
-        prisma.feedbackTheme.upsert({
-          where:  { feedbackId_themeId: { feedbackId: id, themeId } },
-          create: { feedbackId: id, themeId, confidence: 0.9 },
-          update: {},
-        })
-      ),
-    ])
-
-    classified++
+  for (const item of unclassified) {
+    try {
+      const cls = await classifyFeedback(item.content)
+      await persistClassification(item.id, wid, cls)
+      classified++
+    } catch (err) {
+      console.error(`[classify] skipping ${item.id}:`, err)
+      skipped++
+    }
   }
+
+  // Count remaining after this batch
+  const remaining = await prisma.feedback.count({
+    where: { workspaceId: wid, sentiment: null },
+  })
 
   return NextResponse.json({
     classified,
-    total: unclassified.length,
-    message: `Classified ${classified} of ${unclassified.length} feedback items.`,
+    skipped,
+    remaining,
+    message: `Classified ${classified}${skipped > 0 ? `, skipped ${skipped}` : ''}. ${remaining} item${remaining !== 1 ? 's' : ''} remaining.`,
   })
 }

@@ -1,7 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { z } from 'zod'
+import { prisma } from '@/lib/prisma'
 
-// ── Zod schema for Claude's structured JSON response ──────────────────────────
+// ── Zod schema for Claude's structured JSON response ─────────────────────────
 export const ClassificationSchema = z.object({
   sentiment:      z.enum(['POS', 'NEU', 'NEG']),
   sentimentScore: z.number().min(-1).max(1),
@@ -11,7 +12,7 @@ export const ClassificationSchema = z.object({
 
 export type Classification = z.infer<typeof ClassificationSchema>
 
-// ── Lazy singleton — only instantiated on the server ──────────────────────────
+// ── Lazy singleton — only instantiated server-side ───────────────────────────
 let _client: Anthropic | null = null
 function getClient(): Anthropic {
   if (!_client) {
@@ -22,15 +23,15 @@ function getClient(): Anthropic {
 }
 
 const SYSTEM_PROMPT = `You are a customer-feedback classifier for a SaaS analytics platform.
-Given a piece of customer feedback, return ONLY a JSON object with these fields:
+Given a piece of customer feedback, return ONLY a JSON object with these exact fields:
 - sentiment: "POS" | "NEU" | "NEG"
 - sentimentScore: float from -1.0 (most negative) to 1.0 (most positive)
-- themes: array of 1-3 theme strings from this list: ["Performance", "Onboarding", "Billing", "Mobile", "Integrations", "Feature Requests", "Support", "UX", "Security", "Analytics"]
-- summary: one sentence (max 200 chars) summarising the feedback
+- themes: array of 1-3 strings chosen ONLY from: ["Performance","Onboarding","Billing","Mobile","Integrations","Feature Requests","Support","UX","Security","Analytics"]
+- summary: one sentence max 200 chars summarising the core issue or praise
 
-Respond with valid JSON only. No markdown, no explanation.`
+Respond with valid JSON only. No markdown fences, no explanation, no extra keys.`
 
-// ── Classify a single feedback string ─────────────────────────────────────────
+// ── Call Claude and return a validated Classification ────────────────────────
 export async function classifyFeedback(content: string): Promise<Classification> {
   const client = getClient()
 
@@ -42,8 +43,6 @@ export async function classifyFeedback(content: string): Promise<Classification>
   })
 
   const raw = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
-
-  // Strip markdown code fences if Claude wraps the JSON
   const jsonStr = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim()
 
   let parsed: unknown
@@ -55,14 +54,49 @@ export async function classifyFeedback(content: string): Promise<Classification>
 
   const result = ClassificationSchema.safeParse(parsed)
   if (!result.success) {
-    throw new Error(`Classification schema invalid: ${JSON.stringify(result.error.flatten())}`)
+    throw new Error(`Schema validation failed: ${JSON.stringify(result.error.flatten())}`)
   }
 
   return result.data
 }
 
-// ── Classify a batch, returning results keyed by index ────────────────────────
-// Processes sequentially to avoid rate-limit bursts.
+// ── Persist a classification result to the DB ────────────────────────────────
+// Shared by: ingest (fire-and-forget), batch back-fill, manual re-classify.
+// Overwrites existing sentiment/score/summary and re-links themes.
+export async function persistClassification(
+  feedbackId: string,
+  workspaceId: string,
+  cls: Classification
+): Promise<void> {
+  const { sentiment, sentimentScore, themes, summary } = cls
+
+  // Resolve theme names → IDs scoped to this workspace
+  const workspaceThemes = await prisma.theme.findMany({
+    where: { workspaceId, name: { in: themes } },
+    select: { id: true, name: true },
+  })
+  const themeIds = workspaceThemes.map(t => t.id)
+
+  // Delete old theme links then re-create — handles re-classify cleanly
+  await prisma.$transaction([
+    prisma.feedback.update({
+      where: { id: feedbackId },
+      data: {
+        sentiment:      sentiment as never,
+        sentimentScore,
+        sourceRef:      summary,
+      },
+    }),
+    prisma.feedbackTheme.deleteMany({ where: { feedbackId } }),
+    ...themeIds.map(themeId =>
+      prisma.feedbackTheme.create({
+        data: { feedbackId, themeId, confidence: 0.9 },
+      })
+    ),
+  ])
+}
+
+// ── Classify a batch sequentially (avoids rate-limit bursts) ─────────────────
 export async function classifyBatch(
   items: { id: string; content: string }[]
 ): Promise<{ id: string; classification: Classification }[]> {
@@ -73,8 +107,7 @@ export async function classifyBatch(
       const classification = await classifyFeedback(item.content)
       results.push({ id: item.id, classification })
     } catch (err) {
-      // Log and skip — don't let one bad item abort the whole batch
-      console.error(`[ai] Failed to classify ${item.id}:`, err)
+      console.error(`[ai] classifyBatch skipping ${item.id}:`, err)
     }
   }
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-guard'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
-import { classifyFeedback } from '@/lib/ai'
+import { classifyFeedback, persistClassification } from '@/lib/ai'
 
 const CreateSchema = z.object({
   content: z.string().min(1),
@@ -28,27 +28,11 @@ export async function POST(req: NextRequest) {
     select: { id: true, content: true, channel: true, status: true, createdAt: true },
   })
 
-  // Fire-and-forget classification — don't block the response
+  // Fire-and-forget — classify after responding so the user isn't blocked
   const wid = session.user.workspaceId
-  classifyFeedback(parsed.data.content).then(async (cls) => {
-    const themes = await prisma.theme.findMany({
-      where: { workspaceId: wid, name: { in: cls.themes } },
-      select: { id: true },
-    })
-    await prisma.$transaction([
-      prisma.feedback.update({
-        where: { id: feedback.id },
-        data: { sentiment: cls.sentiment as never, sentimentScore: cls.sentimentScore, sourceRef: cls.summary },
-      }),
-      ...themes.map(t =>
-        prisma.feedbackTheme.upsert({
-          where:  { feedbackId_themeId: { feedbackId: feedback.id, themeId: t.id } },
-          create: { feedbackId: feedback.id, themeId: t.id, confidence: 0.9 },
-          update: {},
-        })
-      ),
-    ])
-  }).catch(err => console.error('[ai] ingest classify failed:', err))
+  classifyFeedback(parsed.data.content)
+    .then(cls => persistClassification(feedback.id, wid, cls))
+    .catch(err => console.error('[ai] ingest classify failed:', err))
 
   return NextResponse.json({ feedback }, { status: 201 })
 }

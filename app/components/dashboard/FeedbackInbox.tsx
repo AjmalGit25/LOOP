@@ -69,9 +69,11 @@ export default function FeedbackInbox({ role }: Props) {
   const [datePreset, setDatePreset] = useState('')
   const [page, setPage]             = useState(1)
 
-  const [selected, setSelected]     = useState<Feedback | null>(null)
-  const [updating, setUpdating]     = useState<string | null>(null)
+  const [selected, setSelected]       = useState<Feedback | null>(null)
+  const [updating, setUpdating]       = useState<string | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [reclassifying, setReclassifying] = useState(false)
+  const [reclassifyMsg, setReclassifyMsg] = useState('')
 
   // Load themes once
   useEffect(() => {
@@ -118,6 +120,36 @@ export default function FeedbackInbox({ role }: Props) {
   }, [page, debouncedSearch, statusFilter, channelFilter, sentimentFilter, themeFilter, datePreset])
 
   useEffect(() => { fetchFeedback() }, [fetchFeedback])
+
+  async function reclassify(id: string) {
+    setReclassifying(true)
+    setReclassifyMsg('')
+    try {
+      const res = await fetch(`/api/feedback/${id}/classify`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed')
+      const { classification: cls } = data
+      // Update the selected item in-place so the modal reflects new values immediately
+      setSelected(prev => prev ? {
+        ...prev,
+        sentiment:      cls.sentiment,
+        sentimentScore: cls.sentimentScore,
+        sourceRef:      cls.summary,
+      } : prev)
+      // Also update the table row
+      setItems(prev => prev.map(f => f.id === id ? {
+        ...f,
+        sentiment:      cls.sentiment,
+        sentimentScore: cls.sentimentScore,
+        sourceRef:      cls.summary,
+      } : f))
+      setReclassifyMsg('Re-classified successfully')
+    } catch (err) {
+      setReclassifyMsg(err instanceof Error ? err.message : 'Error')
+    } finally {
+      setReclassifying(false)
+    }
+  }
 
   async function updateStatus(id: string, status: string) {
     setUpdating(id)
@@ -331,7 +363,7 @@ export default function FeedbackInbox({ role }: Props) {
                   <tr
                     key={f.id}
                     className='border-b border-gray-800/50 hover:bg-gray-900/40 transition-colors cursor-pointer'
-                    onClick={() => setSelected(f)}
+                    onClick={() => { setSelected(f); setReclassifyMsg('') }}
                   >
                     <td className='px-4 py-3 max-w-xs'>
                       {f.customerLabel && <p className='text-xs text-gray-500 mb-0.5'>{f.customerLabel}</p>}
@@ -399,11 +431,11 @@ export default function FeedbackInbox({ role }: Props) {
 
                     <td className='px-4 py-3' onClick={e => e.stopPropagation()}>
                       <button
-                        onClick={() => setSelected(f)}
-                        className='text-xs text-gray-500 hover:text-white border border-gray-700 hover:border-gray-500 px-2 py-0.5 rounded-lg transition-colors'
-                      >
-                        View
-                      </button>
+                          onClick={() => { setSelected(f); setReclassifyMsg('') }}
+                          className='text-xs text-gray-500 hover:text-white border border-gray-700 hover:border-gray-500 px-2 py-0.5 rounded-lg transition-colors'
+                        >
+                          View
+                        </button>
                     </td>
                   </tr>
                 ))
@@ -572,6 +604,30 @@ export default function FeedbackInbox({ role }: Props) {
               </div>
               {!canEdit && <p className='text-gray-600 text-xs'>Read-only — ANALYST or ADMIN role required.</p>}
             </div>
+
+            {/* AI Re-classify — ANALYST/ADMIN only */}
+            {canEdit && (
+              <div className='flex flex-col gap-2 border-t border-gray-800 pt-4'>
+                <p className='text-gray-500 text-xs uppercase tracking-wider'>AI Classification</p>
+                <div className='flex items-center gap-3 flex-wrap'>
+                  <button
+                    onClick={() => reclassify(selected.id)}
+                    disabled={reclassifying}
+                    className='flex items-center gap-2 text-xs bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/40 text-blue-400 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                  >
+                    {reclassifying ? (
+                      <><span className='w-3 h-3 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin' />Re-classifying...</>
+                    ) : '🧠 Re-classify with AI'}
+                  </button>
+                  {reclassifyMsg && (
+                    <p className={`text-xs ${reclassifyMsg.includes('success') ? 'text-green-400' : 'text-red-400'}`}>
+                      {reclassifyMsg.includes('success') ? '✓' : '✗'} {reclassifyMsg}
+                    </p>
+                  )}
+                </div>
+                <p className='text-gray-700 text-xs'>Calls Claude to re-analyse this item and update sentiment, score and themes.</p>
+              </div>
+            )}
           </div>
         </div>
       )}
