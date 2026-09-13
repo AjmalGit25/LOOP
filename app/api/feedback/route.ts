@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-guard'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
-import { classifyFeedback, persistClassification, getWorkspaceThemeNames } from '@/lib/ai'
+import { classifyFeedback, persistClassification, getWorkspaceThemeNames, generateAndSaveEmbedding } from '@/lib/ai'
 
 const CreateSchema = z.object({
   content: z.string().min(1),
@@ -35,6 +35,10 @@ export async function POST(req: NextRequest) {
     .then(cls => persistClassification(feedback.id, wid, cls))
     .catch(err => console.error('[ai] ingest classify failed:', err))
 
+  // Fire-and-forget — generate and persist embedding
+  generateAndSaveEmbedding(feedback.id, parsed.data.content)
+    .catch(err => console.error('[ai] ingest embedding failed:', err))
+
   return NextResponse.json({ feedback }, { status: 201 })
 }
 
@@ -43,21 +47,21 @@ export async function GET(req: NextRequest) {
   if (response) return response
 
   const { searchParams } = new URL(req.url)
-  const page   = Math.max(1, parseInt(searchParams.get('page')  ?? '1'))
-  const limit  = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') ?? '10')))
-  const search  = searchParams.get('search')?.trim()  ?? ''
-  const status  = searchParams.get('status')  ?? ''
+  const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'))
+  const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') ?? '10')))
+  const search = searchParams.get('search')?.trim() ?? ''
+  const status = searchParams.get('status') ?? ''
   const channel = searchParams.get('channel') ?? ''
 
   const sentiment = searchParams.get('sentiment') ?? ''
-  const theme     = searchParams.get('theme')     ?? ''
-  const from      = searchParams.get('from')      ?? ''
-  const to        = searchParams.get('to')        ?? ''
+  const theme = searchParams.get('theme') ?? ''
+  const from = searchParams.get('from') ?? ''
+  const to = searchParams.get('to') ?? ''
 
   // Build Prisma where — all conditions are AND-combined
   const where: Record<string, unknown> = { workspaceId: session.user.workspaceId }
-  if (search)                    where.content   = { contains: search, mode: 'insensitive' }
-  if (status  && status  !== 'ALL') where.status  = status
+  if (search) where.content = { contains: search, mode: 'insensitive' }
+  if (status && status !== 'ALL') where.status = status
   if (channel && channel !== 'ALL') where.channel = channel
   if (sentiment && sentiment !== 'ALL') where.sentiment = sentiment
 

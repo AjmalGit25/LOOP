@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth-guard'
 import { prisma } from '@/lib/prisma'
+import { generateAndSaveEmbedding } from '@/lib/ai'
 import Papa from 'papaparse'
 import { z } from 'zod'
 
@@ -68,6 +69,22 @@ export async function POST(req: NextRequest) {
     })),
     skipDuplicates: true,
   })
+
+    // Fire-and-forget: find inserted feedbacks and generate embeddings
+    ; (async () => {
+      try {
+        const contents = valid.map((r) => r.content)
+        const created = await prisma.feedback.findMany({
+          where: { workspaceId: session.user.workspaceId, content: { in: contents } },
+          select: { id: true, content: true },
+          take: valid.length,
+        })
+
+        await Promise.allSettled(created.map(f => generateAndSaveEmbedding(f.id, f.content)))
+      } catch (err) {
+        console.error('[ai] import embeddings failed:', err)
+      }
+    })()
 
   return NextResponse.json({
     imported: valid.length,

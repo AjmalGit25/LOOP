@@ -4,10 +4,10 @@ import { prisma } from '@/lib/prisma'
 
 // ── Zod schema for Claude's structured JSON response ─────────────────────────
 export const ClassificationSchema = z.object({
-  sentiment:      z.enum(['POS', 'NEU', 'NEG']),
+  sentiment: z.enum(['POS', 'NEU', 'NEG']),
   sentimentScore: z.number().min(-1).max(1),
-  themes:         z.array(z.string()).min(1).max(3),
-  summary:        z.string().max(200),
+  themes: z.array(z.string()).min(1).max(3),
+  summary: z.string().max(200),
 })
 
 export type Classification = z.infer<typeof ClassificationSchema>
@@ -55,10 +55,10 @@ export async function classifyFeedback(
   const client = getClient()
 
   const message = await client.messages.create({
-    model:      'claude-sonnet-4-5',
+    model: 'claude-sonnet-4-5',
     max_tokens: 256,
-    system:     buildSystemPrompt(existingThemes),
-    messages:   [{ role: 'user', content }],
+    system: buildSystemPrompt(existingThemes),
+    messages: [{ role: 'user', content }],
   })
 
   const raw = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
@@ -142,4 +142,73 @@ export async function classifyBatch(
   }
 
   return results
+}
+
+// ── Embedding helpers (uses OpenAI embeddings REST API) ────────────────────
+function sqlEscapeString(s: string) {
+  return s.replace(/'/g, "''")
+}
+
+export async function generateEmbedding(text: string): Promise<number[]> {
+  if (!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY is not set')
+
+  const res = await fetch('https://api.openai.com/v1/embeddings', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({ model: 'text-embedding-3-small', input: text }),
+  })
+
+  if (!res.ok) {
+    const txt = await res.text()
+    throw new Error(`OpenAI embedding error: ${res.status} ${txt}`)
+  }
+
+  const body = await res.json()
+  const vec = body.data?.[0]?.embedding
+  if (!Array.isArray(vec)) throw new Error('Invalid embedding response')
+  return vec.map((n: number) => Number(n))
+}
+
+export async function persistEmbeddingForFeedback(feedbackId: string, vector: number[]): Promise<void> {
+  // Safely build a literal for pgvector: '[0.1,0.2,...]'::vector
+  const v = vector.map((n) => Number(n))
+  const vecLiteral = `[${v.join(',')}]`
+  const escFeedbackId = sqlEscapeString(feedbackId)
+
+  // Upsert the embedding using raw SQL because Prisma doesn't natively support the pgvector type
+  const sql = `INSERT INTO \"Embedding\" (\"feedbackId\", vector) VALUES ('${escFeedbackId}', '${vecLiteral}'::vector) ON CONFLICT (\"feedbackId\") DO UPDATE SET vector = EXCLUDED.vector;`
+  await prisma.$executeRawUnsafe(sql)
+}
+
+export async function generateAndSaveEmbedding(feedbackId: string, text: string): Promise<void> {
+  try {
+    const vec = await generateEmbedding(text)
+    await persistEmbeddingForFeedback(feedbackId, vec)
+  } catch (err) {
+    console.error('[ai] generateAndSaveEmbedding failed:', err)
+  }
+}
+
+// ── Ask Claude with supplied evidence (grounded RAG) ───────────────────────
+export async function askWithEvidence(question: string, evidences: { id: string; content: string }[]): Promise<string> {
+  const client = getClient()
+
+  const numbered = evidences.map((e, i) => `[${i + 1}] Feedback ${e.id}: ${e.content}`).join('\n')
+
+  const system = `You are an analyst that MUST answer using only the supplied feedback items. Do not hallucinate or add external information. Produce a short concise answer, then a Sources section that lists the numbered feedback items referenced.`
+
+  const userPrompt = `USER QUESTION:\n${question}\n\nRELEVANT FEEDBACK:\n${numbered}\n\nInstructions: Answer the user's question using ONLY the feedback above. Where you make a claim, cite the feedback items in brackets (e.g. [1], [2]). Then include a final "Sources" list mapping numbers to the original feedback text.`
+
+  const message = await client.messages.create({
+    model: 'claude-sonnet-4-5',
+    max_tokens: 512,
+    system,
+    messages: [{ role: 'user', content: userPrompt }],
+  })
+
+  const raw = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+  return raw
 }
