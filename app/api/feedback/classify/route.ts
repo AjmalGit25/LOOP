@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth-guard'
 import { prisma } from '@/lib/prisma'
-import { classifyFeedback, persistClassification } from '@/lib/ai'
+import { classifyFeedback, persistClassification, getWorkspaceThemeNames } from '@/lib/ai'
 
 const MAX_BATCH = 50
 
@@ -41,12 +41,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ classified: 0, skipped: 0, message: 'All feedback is already classified.' })
   }
 
+  // Fetch existing theme names once — passed to every Claude call so it reuses them
+  const existingThemes = await getWorkspaceThemeNames(wid)
+
   let classified = 0
   let skipped = 0
 
   for (const item of unclassified) {
     try {
-      const cls = await classifyFeedback(item.content)
+      const cls = await classifyFeedback(item.content, existingThemes)
       await persistClassification(item.id, wid, cls)
       classified++
     } catch (err) {

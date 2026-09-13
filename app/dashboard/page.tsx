@@ -9,13 +9,15 @@ import FeedbackInbox from '@/app/components/dashboard/FeedbackInbox'
 import AdminPanel from '@/app/components/dashboard/AdminPanel'
 import SimulateChannel from '@/app/components/dashboard/SimulateChannel'
 import ClassifyButton from '@/app/components/dashboard/ClassifyButton'
+import ThemeExplorer from '@/app/components/dashboard/ThemeExplorer'
 
-type Tab = 'overview' | 'feedback' | 'analytics' | 'admin'
+type Tab = 'overview' | 'feedback' | 'analytics' | 'themes' | 'admin'
 
 const TAB_LABELS: Record<Tab, string> = {
   overview:  'Overview',
   feedback:  'Feedback Inbox',
   analytics: 'Analytics',
+  themes:    'Themes',
   admin:     'Members',
 }
 
@@ -47,6 +49,7 @@ export default function DashboardPage() {
     { id: 'overview',  label: 'Overview',       show: true },
     { id: 'feedback',  label: 'Feedback Inbox', show: true },
     { id: 'analytics', label: 'Analytics',      show: isAdmin || isAnalyst },
+    { id: 'themes',    label: 'Themes',         show: true },
     { id: 'admin',     label: 'Members',        show: isAdmin },
   ]
 
@@ -118,6 +121,14 @@ export default function DashboardPage() {
                   </button>
                 )}
 
+                <button
+                  onClick={() => setTab('themes')}
+                  className='bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-xl p-4 text-left flex flex-col gap-1 transition-colors'
+                >
+                  <span className='text-white text-sm font-medium'>Themes →</span>
+                  <span className='text-gray-500 text-xs'>AI-clustered topics with drill-down</span>
+                </button>
+
                 {isAdmin && (
                   <button
                     onClick={() => setTab('admin')}
@@ -175,6 +186,9 @@ export default function DashboardPage() {
           {tab === 'analytics' && !isAdmin && !isAnalyst && (
             <p className='text-red-400 text-sm'>Access denied.</p>
           )}
+
+          {/* ── Themes ── */}
+          {tab === 'themes' && <ThemeExplorer />}
 
           {/* ── Members (ADMIN only) ── */}
           {tab === 'admin' && isAdmin && <AdminPanel currentUserId={session.user.id} />}

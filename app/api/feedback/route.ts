@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-guard'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
-import { classifyFeedback, persistClassification } from '@/lib/ai'
+import { classifyFeedback, persistClassification, getWorkspaceThemeNames } from '@/lib/ai'
 
 const CreateSchema = z.object({
   content: z.string().min(1),
@@ -30,7 +30,8 @@ export async function POST(req: NextRequest) {
 
   // Fire-and-forget — classify after responding so the user isn't blocked
   const wid = session.user.workspaceId
-  classifyFeedback(parsed.data.content)
+  getWorkspaceThemeNames(wid)
+    .then(names => classifyFeedback(parsed.data.content, names))
     .then(cls => persistClassification(feedback.id, wid, cls))
     .catch(err => console.error('[ai] ingest classify failed:', err))
 

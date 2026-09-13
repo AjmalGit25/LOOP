@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 export const ClassificationSchema = z.object({
   sentiment:      z.enum(['POS', 'NEU', 'NEG']),
   sentimentScore: z.number().min(-1).max(1),
-  themes:         z.array(z.string()).max(3),
+  themes:         z.array(z.string()).min(1).max(3),
   summary:        z.string().max(200),
 })
 
@@ -22,23 +22,42 @@ function getClient(): Anthropic {
   return _client
 }
 
-const SYSTEM_PROMPT = `You are a customer-feedback classifier for a SaaS analytics platform.
+function buildSystemPrompt(existingThemes: string[]): string {
+  const themeList = existingThemes.length > 0
+    ? existingThemes.map(t => `"${t}"`).join(', ')
+    : '"Performance","Onboarding","Billing","Mobile","Integrations","Feature Requests","Support","UX","Security","Analytics"'
+
+  return `You are a customer-feedback classifier for a SaaS analytics platform.
 Given a piece of customer feedback, return ONLY a JSON object with these exact fields:
 - sentiment: "POS" | "NEU" | "NEG"
 - sentimentScore: float from -1.0 (most negative) to 1.0 (most positive)
-- themes: array of 1-3 strings chosen ONLY from: ["Performance","Onboarding","Billing","Mobile","Integrations","Feature Requests","Support","UX","Security","Analytics"]
+- themes: array of 1-3 theme strings. PREFER existing themes: [${themeList}]. Only invent a new theme name if none of the existing ones fit.
 - summary: one sentence max 200 chars summarising the core issue or praise
 
 Respond with valid JSON only. No markdown fences, no explanation, no extra keys.`
+}
+
+// ── Fetch existing theme names for a workspace (for prompt injection) ─────────
+export async function getWorkspaceThemeNames(workspaceId: string): Promise<string[]> {
+  const themes = await prisma.theme.findMany({
+    where: { workspaceId },
+    select: { name: true },
+    orderBy: { name: 'asc' },
+  })
+  return themes.map(t => t.name)
+}
 
 // ── Call Claude and return a validated Classification ────────────────────────
-export async function classifyFeedback(content: string): Promise<Classification> {
+export async function classifyFeedback(
+  content: string,
+  existingThemes: string[] = []
+): Promise<Classification> {
   const client = getClient()
 
   const message = await client.messages.create({
     model:      'claude-sonnet-4-5',
     max_tokens: 256,
-    system:     SYSTEM_PROMPT,
+    system:     buildSystemPrompt(existingThemes),
     messages:   [{ role: 'user', content }],
   })
 
@@ -61,8 +80,10 @@ export async function classifyFeedback(content: string): Promise<Classification>
 }
 
 // ── Persist a classification result to the DB ────────────────────────────────
-// Shared by: ingest (fire-and-forget), batch back-fill, manual re-classify.
-// Overwrites existing sentiment/score/summary and re-links themes.
+// Shared by: ingest, batch back-fill, manual re-classify.
+// - Reuses existing themes by name (case-insensitive).
+// - Auto-creates any theme name Claude returned that doesn't exist yet.
+// - Deletes old FeedbackTheme links and re-creates — handles re-classify cleanly.
 export async function persistClassification(
   feedbackId: string,
   workspaceId: string,
@@ -70,22 +91,30 @@ export async function persistClassification(
 ): Promise<void> {
   const { sentiment, sentimentScore, themes, summary } = cls
 
-  // Resolve theme names → IDs scoped to this workspace
-  const workspaceThemes = await prisma.theme.findMany({
-    where: { workspaceId, name: { in: themes } },
-    select: { id: true, name: true },
-  })
-  const themeIds = workspaceThemes.map(t => t.id)
+  // Resolve or create each theme name within this workspace
+  const themeIds: string[] = []
+  for (const name of themes) {
+    const existing = await prisma.theme.findFirst({
+      where: { workspaceId, name: { equals: name, mode: 'insensitive' } },
+      select: { id: true },
+    })
+    if (existing) {
+      themeIds.push(existing.id)
+    } else {
+      // Auto-create unknown theme returned by Claude
+      const created = await prisma.theme.create({
+        data: { name, workspaceId },
+        select: { id: true },
+      })
+      themeIds.push(created.id)
+    }
+  }
 
-  // Delete old theme links then re-create — handles re-classify cleanly
+  // Update feedback + replace theme links atomically
   await prisma.$transaction([
     prisma.feedback.update({
       where: { id: feedbackId },
-      data: {
-        sentiment:      sentiment as never,
-        sentimentScore,
-        sourceRef:      summary,
-      },
+      data: { sentiment: sentiment as never, sentimentScore, sourceRef: summary },
     }),
     prisma.feedbackTheme.deleteMany({ where: { feedbackId } }),
     ...themeIds.map(themeId =>
@@ -98,13 +127,14 @@ export async function persistClassification(
 
 // ── Classify a batch sequentially (avoids rate-limit bursts) ─────────────────
 export async function classifyBatch(
-  items: { id: string; content: string }[]
+  items: { id: string; content: string }[],
+  existingThemes: string[] = []
 ): Promise<{ id: string; classification: Classification }[]> {
   const results: { id: string; classification: Classification }[] = []
 
   for (const item of items) {
     try {
-      const classification = await classifyFeedback(item.content)
+      const classification = await classifyFeedback(item.content, existingThemes)
       results.push({ id: item.id, classification })
     } catch (err) {
       console.error(`[ai] classifyBatch skipping ${item.id}:`, err)

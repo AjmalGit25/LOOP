@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { FaArrowRight } from 'react-icons/fa6'
@@ -15,7 +15,9 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [quote] = useState(() => TESTIMONIALS[Math.floor(Math.random() * TESTIMONIALS.length)])
+  const [quoteIdx, setQuoteIdx] = useState(0)
+  useEffect(() => { setQuoteIdx(Math.floor(Math.random() * TESTIMONIALS.length)) }, [])
+  const quote = TESTIMONIALS[quoteIdx]
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })

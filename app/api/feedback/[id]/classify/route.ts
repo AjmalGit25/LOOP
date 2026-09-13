@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth-guard'
 import { prisma } from '@/lib/prisma'
-import { classifyFeedback, persistClassification } from '@/lib/ai'
+import { classifyFeedback, persistClassification, getWorkspaceThemeNames } from '@/lib/ai'
 
 export async function POST(
   _req: NextRequest,
@@ -23,7 +23,8 @@ export async function POST(
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  const cls = await classifyFeedback(feedback.content)
+  const existingThemes = await getWorkspaceThemeNames(wid)
+  const cls = await classifyFeedback(feedback.content, existingThemes)
   await persistClassification(feedback.id, wid, cls)
 
   return NextResponse.json({
