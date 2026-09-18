@@ -175,12 +175,20 @@ export default function LandingPage() {
 
             <div className='flex flex-col sm:flex-row items-center justify-center gap-3 mt-1'>
               {loggedIn ? (
-                <Link
-                  href='/dashboard'
-                  className='bg-linear-to-r from-gold-300 to-gold-600 text-black font-bold px-6 py-3 rounded-full hover:-translate-y-0.5 transition-all duration-100 text-sm shadow-[0_0_30px_rgba(212,175,55,0.25)]'
-                >
-                  Go to Dashboard →
-                </Link>
+                <>
+                  <Link
+                    href='/dashboard'
+                    className='bg-linear-to-r from-gold-300 to-gold-600 text-black font-bold px-6 py-3 rounded-full hover:-translate-y-0.5 transition-all duration-100 text-sm shadow-[0_0_30px_rgba(212,175,55,0.25)]'
+                  >
+                    Go to Dashboard →
+                  </Link>
+                  <Link
+                    href='/how-it-works'
+                    className='text-gray-300 hover:text-white text-sm border border-gray-700 px-6 py-3 rounded-full hover:border-gray-500 transition-colors bg-gray-950/60'
+                  >
+                    How it works
+                  </Link>
+                </>
               ) : (
                 <>
                   <Link
@@ -190,10 +198,10 @@ export default function LandingPage() {
                     Start for free
                   </Link>
                   <Link
-                    href='/login'
+                    href='/how-it-works'
                     className='text-gray-300 hover:text-white text-sm border border-gray-700 px-6 py-3 rounded-full hover:border-gray-500 transition-colors bg-gray-950/60'
                   >
-                    Sign in
+                    How it works
                   </Link>
                 </>
               )}
