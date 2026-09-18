@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <rect width="1400" height="900" fill="#09090b"/>
+  <rect x="0" y="0" width="1400" height="72" fill="#111827"/>
+  <text x="82" y="46" fill="#f5d98e" font-size="28" font-family="Arial, sans-serif" font-weight="700">LOOP</text>
+  <text x="700" y="160" text-anchor="middle" fill="#ffffff" font-size="58" font-family="Arial, sans-serif" font-weight="700">Turn customer noise into product clarity</text>
+  <rect x="510" y="210" width="380" height="54" rx="27" fill="#f5d98e"/>
+  <text x="700" y="246" text-anchor="middle" fill="#111827" font-size="24" font-family="Arial, sans-serif" font-weight="700">Start for free</text>
+  <g>
+    <rect x="120" y="330" width="320" height="170" rx="16" fill="#111827" stroke="#2b2b30"/>
+    <text x="160" y="392" fill="#f5d98e" font-size="30" font-family="Arial, sans-serif" font-weight="700">130+</text>
+    <text x="160" y="430" fill="#9ca3af" font-size="22" font-family="Arial, sans-serif">Feedback records</text>
+    <text x="160" y="460" fill="#9ca3af" font-size="22" font-family="Arial, sans-serif">analysed</text>
+  </g>
+  <g>
+    <rect x="480" y="330" width="320" height="170" rx="16" fill="#111827" stroke="#2b2b30"/>
+    <text x="520" y="392" fill="#f5d98e" font-size="30" font-family="Arial, sans-serif" font-weight="700">8</text>
+    <text x="520" y="430" fill="#9ca3af" font-size="22" font-family="Arial, sans-serif">Auto-detected</text>
+    <text x="520" y="460" fill="#9ca3af" font-size="22" font-family="Arial, sans-serif">categories</text>
+  </g>
+  <g>
+    <rect x="840" y="330" width="320" height="170" rx="16" fill="#111827" stroke="#2b2b30"/>
+    <text x="880" y="392" fill="#f5d98e" font-size="30" font-family="Arial, sans-serif" font-weight="700">3</text>
+    <text x="880" y="430" fill="#9ca3af" font-size="22" font-family="Arial, sans-serif">Role tiers</text>
+    <text x="880" y="460" fill="#9ca3af" font-size="22" font-family="Arial, sans-serif">(RBAC)</text>
+  </g>
+  <rect x="120" y="540" width="1160" height="240" rx="22" fill="#111827" stroke="#2b2b30"/>
+  <text x="160" y="610" fill="#ffffff" font-size="30" font-family="Arial, sans-serif" font-weight="700">Everything you need</text>
+  <text x="160" y="660" fill="#9ca3af" font-size="22" font-family="Arial, sans-serif">AI classification · Ingest at scale · Trend dashboard · Plain-English Q&A</text>
+  <text x="160" y="705" fill="#9ca3af" font-size="22" font-family="Arial, sans-serif">Secure workspaces · CSV import · Saved reports</text>
+</svg>

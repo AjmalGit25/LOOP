@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <rect width="1400" height="900" fill="#09090b"/>
+  <rect x="0" y="0" width="700" height="900" fill="#111827"/>
+  <text x="80" y="110" fill="#f5d98e" font-size="24" font-family="Arial, sans-serif" font-weight="700">AI-Powered</text>
+  <text x="80" y="220" fill="#ffffff" font-size="46" font-family="Arial, sans-serif" font-weight="700">Your customers are talking.</text>
+  <text x="80" y="280" fill="#ffffff" font-size="46" font-family="Arial, sans-serif" font-weight="700">Are you listening?</text>
+  <text x="80" y="340" fill="#9ca3af" font-size="22" font-family="Arial, sans-serif">LOOP ingests support tickets, reviews, and surveys.</text>
+  <text x="80" y="370" fill="#9ca3af" font-size="22" font-family="Arial, sans-serif">It turns them into product clarity before issues grow.</text>
+  <rect x="80" y="470" width="520" height="240" rx="18" fill="#171b22" stroke="#2b2b30"/>
+  <text x="110" y="530" fill="#f5d98e" font-size="26" font-family="Arial, sans-serif">“LOOP cut our feedback review time from days to minutes.”</text>
+  <text x="110" y="590" fill="#9ca3af" font-size="20" font-family="Arial, sans-serif">— Head of Product, SaaS Co.</text>
+  <rect x="760" y="180" width="460" height="500" rx="20" fill="#121417" stroke="#2b2b30"/>
+  <text x="820" y="260" fill="#ffffff" font-size="34" font-family="Arial, sans-serif" font-weight="700">Welcome back</text>
+  <text x="820" y="300" fill="#9ca3af" font-size="18" font-family="Arial, sans-serif">Sign in to your LOOP workspace</text>
+  <rect x="820" y="350" width="340" height="54" rx="12" fill="#0b0f14" stroke="#374151"/>
+  <rect x="820" y="430" width="340" height="54" rx="12" fill="#0b0f14" stroke="#374151"/>
+  <rect x="820" y="520" width="340" height="54" rx="27" fill="#f5d98e"/>
+  <text x="990" y="554" text-anchor="middle" fill="#111827" font-size="20" font-family="Arial, sans-serif" font-weight="700">Continue</text>
+</svg>
