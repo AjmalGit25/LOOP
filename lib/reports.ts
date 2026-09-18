@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import { prisma } from './prisma'
 
 type ThemeCount = { name: string; count: number }
@@ -96,7 +97,7 @@ export async function generateAndSaveReport(workspaceId: string, periodStart: Da
       title,
       periodStart,
       periodEnd,
-      contentJson: content as any,
+      contentJson: content as Prisma.InputJsonValue,
       workspaceId,
       generatedById,
     },
@@ -105,4 +106,6 @@ export async function generateAndSaveReport(workspaceId: string, periodStart: Da
   return { report: saved, content }
 }
 
-export default { computeReportForPeriod, generateAndSaveReport }
+const reportUtils = { computeReportForPeriod, generateAndSaveReport }
+
+export default reportUtils

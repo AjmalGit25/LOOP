@@ -15,12 +15,12 @@ import TrendsView from '@/app/components/dashboard/TrendsView'
 type Tab = 'overview' | 'feedback' | 'analytics' | 'themes' | 'trends' | 'admin'
 
 const TAB_LABELS: Record<Tab, string> = {
-  overview:  'Overview',
-  feedback:  'Feedback Inbox',
+  overview: 'Overview',
+  feedback: 'Feedback Inbox',
   analytics: 'Analytics',
-  themes:    'Themes',
-  trends:    'Trends',
-  admin:     'Members',
+  themes: 'Themes',
+  trends: 'Trends',
+  admin: 'Members',
 }
 
 export default function DashboardPage() {
@@ -28,13 +28,41 @@ export default function DashboardPage() {
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('overview')
   const [overviewKey, setOverviewKey] = useState(0)
-  const [drillThemeId, setDrillThemeId]     = useState<string | null>(null)
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false)
+  const [drillThemeId, setDrillThemeId] = useState<string | null>(null)
   const [drillThemeName, setDrillThemeName] = useState<string | null>(null)
 
   function drillToTheme(id: string, name: string) {
     setDrillThemeId(id)
     setDrillThemeName(name)
     setTab('themes')
+  }
+
+  async function generateReport() {
+    setIsGeneratingReport(true)
+    try {
+      const end = new Date()
+      const start = new Date(end)
+      start.setDate(end.getDate() - 30)
+
+      const response = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ periodStart: start.toISOString(), periodEnd: end.toISOString() }),
+      })
+
+      const data = await response.json()
+      if (!response.ok || !data?.report?.id) {
+        throw new Error(data?.error ?? 'Report generation failed')
+      }
+
+      router.push(`/reports/${data.report.id}`)
+    } catch (error) {
+      console.error('[dashboard] report generation failed:', error)
+      window.alert('Unable to generate the report right now.')
+    } finally {
+      setIsGeneratingReport(false)
+    }
   }
 
   useEffect(() => {
@@ -52,16 +80,16 @@ export default function DashboardPage() {
   if (!session) return null
 
   const role = session.user.role
-  const isAdmin   = role === 'ADMIN'
+  const isAdmin = role === 'ADMIN'
   const isAnalyst = role === 'ANALYST'
 
   const tabs: { id: Tab; label: string; show: boolean }[] = [
-    { id: 'overview',  label: 'Overview',       show: true },
-    { id: 'feedback',  label: 'Feedback Inbox', show: true },
-    { id: 'analytics', label: 'Analytics',      show: isAdmin || isAnalyst },
-    { id: 'themes',    label: 'Themes',         show: true },
-    { id: 'trends',    label: 'Trends',         show: true },
-    { id: 'admin',     label: 'Members',        show: isAdmin },
+    { id: 'overview', label: 'Overview', show: true },
+    { id: 'feedback', label: 'Feedback Inbox', show: true },
+    { id: 'analytics', label: 'Analytics', show: isAdmin || isAnalyst },
+    { id: 'themes', label: 'Themes', show: true },
+    { id: 'trends', label: 'Trends', show: true },
+    { id: 'admin', label: 'Members', show: isAdmin },
   ]
 
   return (
@@ -78,11 +106,10 @@ export default function DashboardPage() {
               {session.user.name} · <span className='text-gray-600'>LOOP Demo Workspace</span>
             </p>
           </div>
-          <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
-            isAdmin   ? 'text-gold-400 bg-gold-400/10 border-gold-400/20'
-            : isAnalyst ? 'text-blue-400 bg-blue-400/10 border-blue-400/20'
-            : 'text-gray-400 bg-gray-400/10 border-gray-400/20'
-          }`}>
+          <span className={`text-xs font-bold px-3 py-1 rounded-full border ${isAdmin ? 'text-gold-400 bg-gold-400/10 border-gold-400/20'
+              : isAnalyst ? 'text-blue-400 bg-blue-400/10 border-blue-400/20'
+                : 'text-gray-400 bg-gray-400/10 border-gray-400/20'
+            }`}>
             {role}
           </span>
         </div>
@@ -93,11 +120,10 @@ export default function DashboardPage() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`text-sm px-4 py-3 border-b-2 transition-colors ${
-                tab === t.id
+              className={`text-sm px-4 py-3 border-b-2 transition-colors ${tab === t.id
                   ? 'border-gold-500 text-white font-medium'
                   : 'border-transparent text-gray-500 hover:text-gray-300'
-              }`}
+                }`}
             >
               {t.label}
             </button>
@@ -166,6 +192,13 @@ export default function DashboardPage() {
                   <SimulateChannel onDone={() => setOverviewKey(k => k + 1)} />
                   <div className='border-t border-gray-800 pt-3 flex flex-wrap gap-2'>
                     <ClassifyButton onDone={() => setOverviewKey(k => k + 1)} />
+                    <button
+                      onClick={generateReport}
+                      disabled={isGeneratingReport}
+                      className='text-sm text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-4 py-2 rounded-lg transition-colors disabled:opacity-60'
+                    >
+                      {isGeneratingReport ? 'Generating report…' : 'Generate report →'}
+                    </button>
                     <button
                       onClick={() => router.push('/dashboard/feedback/import')}
                       className='text-sm text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-4 py-2 rounded-lg transition-colors'

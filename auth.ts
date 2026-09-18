@@ -25,12 +25,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const valid = await bcrypt.compare(password, user.passwordHash)
         if (!valid) return null
 
+        const authUser = user as {
+          id: string
+          name: string
+          email: string
+          role: 'ADMIN' | 'ANALYST' | 'VIEWER'
+          workspaceId: string
+        }
+
         return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          workspaceId: user.workspaceId,
+          id: authUser.id,
+          name: authUser.name,
+          email: authUser.email,
+          role: authUser.role,
+          workspaceId: authUser.workspaceId,
         }
       },
     }),
@@ -38,16 +46,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id
-        token.role = (user as any).role
-        token.workspaceId = (user as any).workspaceId
+        const userRecord = user as { id?: string; role?: string; workspaceId?: string }
+        token.id = userRecord.id
+        token.role = userRecord.role
+        token.workspaceId = userRecord.workspaceId
       }
       return token
     },
     async session({ session, token }) {
-      session.user.id = token.id as string
-      session.user.role = token.role as string
-      session.user.workspaceId = token.workspaceId as string
+      const tokenRecord = token as { id?: string; role?: string; workspaceId?: string }
+      session.user.id = tokenRecord.id as string
+      session.user.role = tokenRecord.role as string
+      session.user.workspaceId = tokenRecord.workspaceId as string
       return session
     },
   },

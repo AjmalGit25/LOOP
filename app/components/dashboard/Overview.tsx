@@ -9,11 +9,13 @@ import {
 
 type Stats = {
   total: number
-  byStatus:    { status: string; count: number }[]
-  byChannel:   { channel: string; count: number }[]
+  negativePercentage: number
+  newThisWeek: number
+  byStatus: { status: string; count: number }[]
+  byChannel: { channel: string; count: number }[]
   bySentiment: { sentiment: string; count: number }[]
-  topThemes:   { name: string; color: string | null; count: number }[]
-  daily:       { date: string; count: number }[]
+  topThemes: { name: string; color: string | null; count: number }[]
+  daily: { date: string; count: number }[]
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -53,7 +55,11 @@ export default function Overview() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/feedback/stats')
+    const to = new Date()
+    const from = new Date()
+    from.setDate(to.getDate() - 30)
+
+    fetch(`/api/feedback/stats?from=${from.toISOString()}&to=${to.toISOString()}`)
       .then(r => r.json())
       .then(d => { setStats(d); setLoading(false) })
       .catch(() => setLoading(false))
@@ -69,9 +75,10 @@ export default function Overview() {
 
   if (!stats) return <p className='text-gray-600 text-sm text-center py-12'>Failed to load analytics.</p>
 
-  const pos       = stats.bySentiment.find(s => s.sentiment === 'POS')?.count ?? 0
-  const neg       = stats.bySentiment.find(s => s.sentiment === 'NEG')?.count ?? 0
-  const unresolved = stats.byStatus.find(s => s.status === 'NEW')?.count ?? 0
+  const pos = stats.bySentiment.find(s => s.sentiment === 'POS')?.count ?? 0
+  const neg = stats.bySentiment.find(s => s.sentiment === 'NEG')?.count ?? 0
+
+  const negativePct = Number((stats.negativePercentage ?? 0).toFixed(1))
 
   const sentimentData = stats.bySentiment.map(s => ({
     ...s,
@@ -89,10 +96,10 @@ export default function Overview() {
 
       {/* ── Stat cards ── */}
       <div className='grid grid-cols-2 lg:grid-cols-4 gap-3'>
-        <StatCard label='Total Feedback'  value={stats.total}  color='text-white'       sub='all time' />
-        <StatCard label='Positive'        value={pos}          color='text-green-400'   sub={stats.total ? `${Math.round(pos / stats.total * 100)}% of total` : undefined} />
-        <StatCard label='Negative'        value={neg}          color='text-red-400'     sub={stats.total ? `${Math.round(neg / stats.total * 100)}% of total` : undefined} />
-        <StatCard label='Unresolved (New)' value={unresolved}  color='text-blue-400'   sub='awaiting action' />
+        <StatCard label='Total Feedback' value={stats.total} color='text-white' sub='selected range' />
+        <StatCard label='Positive' value={pos} color='text-green-400' sub={stats.total ? `${Math.round(pos / stats.total * 100)}% of total` : undefined} />
+        <StatCard label='% Negative' value={negativePct} color='text-red-400' sub={`${neg} negative in range`} />
+        <StatCard label='New This Week' value={stats.newThisWeek} color='text-blue-400' sub='recent activity' />
       </div>
 
       {/* ── Row 1: Volume (wide) + Sentiment (narrow) ── */}
@@ -219,7 +226,7 @@ export default function Overview() {
             <div className='flex flex-col gap-3'>
               {['NEW', 'REVIEWED', 'ACTIONED'].map(s => {
                 const count = stats.byStatus.find(b => b.status === s)?.count ?? 0
-                const pct   = stats.total ? Math.round(count / stats.total * 100) : 0
+                const pct = stats.total ? Math.round(count / stats.total * 100) : 0
                 return (
                   <div key={s} className='flex flex-col gap-1.5'>
                     <div className='flex items-center justify-between'>
