@@ -3,13 +3,14 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { FaArrowRight } from 'react-icons/fa6'
+import { useToast } from '@/app/components/ToastProvider'
 
 type Role = 'ADMIN' | 'ANALYST' | 'VIEWER'
 
 const ROLE_INFO: Record<Role, { color: string; desc: string }> = {
-  ADMIN:   { color: 'text-gold-400 border-gold-400/30 bg-gold-400/5',   desc: 'Full access — manage members, roles, and all workspace data.' },
-  ANALYST: { color: 'text-blue-400 border-blue-400/30 bg-blue-400/5',   desc: 'Ingest and manage feedback, run CSV imports, view all insights.' },
-  VIEWER:  { color: 'text-gray-400 border-gray-400/30 bg-gray-400/5',   desc: 'Read-only access to feedback, reports, and themes.' },
+  ADMIN: { color: 'text-gold-400 border-gold-400/30 bg-gold-400/5', desc: 'Full access — manage members, roles, and all workspace data.' },
+  ANALYST: { color: 'text-blue-400 border-blue-400/30 bg-blue-400/5', desc: 'Ingest and manage feedback, run CSV imports, view all insights.' },
+  VIEWER: { color: 'text-gray-400 border-gray-400/30 bg-gray-400/5', desc: 'Read-only access to feedback, reports, and themes.' },
 }
 
 const STEPS = [
@@ -20,6 +21,7 @@ const STEPS = [
 ]
 
 export default function SignupPage() {
+  const { showToast } = useToast()
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'VIEWER' as Role })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -31,6 +33,14 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
+      const message = 'Please fill in your name, email, and password.'
+      setError(message)
+      showToast({ title: 'Validation error', message, type: 'error', duration: 3500 })
+      return
+    }
+
     setLoading(true)
 
     const res = await fetch('/api/auth/signup', {
@@ -43,11 +53,22 @@ export default function SignupPage() {
     setLoading(false)
 
     if (!res.ok) {
-      setError(typeof data.error === 'string' ? data.error : 'Something went wrong')
+      const message = typeof data.error === 'string' ? data.error : 'Something went wrong.'
+      setError(message)
+      showToast({ title: 'Sign up failed', message, type: 'error', duration: 4000 })
       return
     }
 
-    window.location.href = '/login'
+    showToast({
+      title: 'Account created',
+      message: 'Your workspace is ready. You can now sign in.',
+      type: 'success',
+      duration: 3500,
+    })
+
+    window.setTimeout(() => {
+      window.location.href = '/login'
+    }, 900)
   }
 
   const selectedRole = ROLE_INFO[form.role]

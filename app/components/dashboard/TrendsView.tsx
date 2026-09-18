@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { FiPlusCircle, FiTrendingUp } from 'react-icons/fi'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer,
@@ -44,15 +45,17 @@ const tooltipStyle = {
 function ChangeChip({ change, spiking }: { change: number | null; spiking: boolean }) {
   if (change === null) {
     return (
-      <span className='text-xs px-2 py-0.5 rounded-full border text-blue-400 bg-blue-400/10 border-blue-400/20'>
-        🆕 New
+      <span className='inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border text-blue-400 bg-blue-400/10 border-blue-400/20'>
+        <FiPlusCircle size={11} />
+        New
       </span>
     )
   }
   if (spiking) {
     return (
-      <span className='text-xs px-2 py-0.5 rounded-full border text-orange-400 bg-orange-400/10 border-orange-400/20'>
-        🔥 +{change}%
+      <span className='inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border text-orange-400 bg-orange-400/10 border-orange-400/20'>
+        <FiTrendingUp size={11} />
+        +{change}%
       </span>
     )
   }
@@ -192,8 +195,9 @@ export default function TrendsView({ onDrillTheme }: Props) {
       {/* Spike cards */}
       {!loading && data && spikingThemes.length > 0 && (
         <div className='flex flex-col gap-3'>
-          <p className='text-white text-sm font-semibold'>
-            🔥 Spiking Themes
+          <p className='inline-flex items-center gap-2 text-white text-sm font-semibold'>
+            <FiTrendingUp size={14} className='text-orange-400' />
+            Spiking Themes
             <span className='text-gray-600 text-xs font-normal ml-2'>
               ≥50% increase vs previous {data.period.days}-day period
             </span>
@@ -266,7 +270,7 @@ export default function TrendsView({ onDrillTheme }: Props) {
                       <div className='flex items-center gap-2'>
                         <span className='w-2 h-2 rounded-full shrink-0' style={{ background: color }} />
                         <span className='text-gray-200 text-xs'>{t.name}</span>
-                        {t.spiking && <span className='text-orange-400 text-xs'>🔥</span>}
+                        {t.spiking && <FiTrendingUp size={12} className='text-orange-400 shrink-0' />}
                       </div>
                     </td>
                     <td className='px-4 py-2.5 text-right'>

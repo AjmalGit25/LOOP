@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useToast } from '@/app/components/ToastProvider'
 
 type Feedback = {
   id: string
@@ -23,6 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function FeedbackPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { showToast } = useToast()
 
   const [content, setContent] = useState('')
   const [channel, setChannel] = useState('web')
@@ -46,7 +48,9 @@ export default function FeedbackPage() {
       setList(data.feedback ?? [])
     } catch (err) {
       console.error('[feedback-page] load failed:', err)
-      setError('Unable to load feedback. Please try again.')
+      const message = 'Unable to load feedback. Please try again.'
+      setError(message)
+      showToast({ title: 'Load failed', message, type: 'error', duration: 3500 })
       setList([])
     } finally {
       setLoadingList(false)
@@ -56,6 +60,14 @@ export default function FeedbackPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    if (!content.trim()) {
+      const message = 'Feedback content cannot be empty.'
+      setError(message)
+      showToast({ title: 'Validation error', message, type: 'error', duration: 3200 })
+      return
+    }
+
     setSubmitting(true)
 
     const res = await fetch('/api/feedback', {
@@ -68,11 +80,14 @@ export default function FeedbackPage() {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({ error: 'Failed to submit feedback' }))
-      setError(data.error ?? 'Failed to submit feedback')
+      const message = data.error ?? 'Failed to submit feedback'
+      setError(message)
+      showToast({ title: 'Submit failed', message, type: 'error', duration: 4000 })
       return
     }
 
     setContent('')
+    showToast({ title: 'Feedback submitted', message: 'Your customer feedback was saved successfully.', type: 'success', duration: 3200 })
     fetchFeedback()
   }
 

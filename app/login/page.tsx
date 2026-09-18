@@ -4,7 +4,15 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
-import { FaArrowRight } from 'react-icons/fa6'
+import {
+  FaArrowRight,
+  FaBolt,
+  FaBrain,
+  FaChartLine,
+  FaComments,
+  FaShieldHalved,
+} from 'react-icons/fa6'
+import { useToast } from '@/app/components/ToastProvider'
 
 const TESTIMONIALS = [
   { quote: 'LOOP cut our feedback review time from days to minutes.', author: 'Head of Product, SaaS Co.' },
@@ -14,6 +22,7 @@ const TESTIMONIALS = [
 
 export default function LoginPage() {
   const router = useRouter()
+  const { showToast } = useToast()
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -26,6 +35,14 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
+
+    if (!form.email.trim() || !form.password.trim()) {
+      const message = !form.email.trim() ? 'Email is required.' : 'Password is required.'
+      setError(message)
+      showToast({ title: 'Missing details', message, type: 'error', duration: 3500 })
+      return
+    }
+
     setLoading(true)
 
     const res = await signIn('credentials', {
@@ -37,10 +54,13 @@ export default function LoginPage() {
     setLoading(false)
 
     if (res?.error) {
-      setError('Invalid email or password')
+      const message = 'Invalid email or password.'
+      setError(message)
+      showToast({ title: 'Login failed', message, type: 'error', duration: 4000 })
       return
     }
 
+    showToast({ title: 'Welcome back', message: 'You have been signed in successfully.', type: 'success', duration: 2800 })
     router.push('/dashboard')
   }
 
@@ -70,14 +90,15 @@ export default function LoginPage() {
           {/* Feature list */}
           <ul className='flex flex-col gap-3'>
             {[
-              '🧠 AI sentiment & theme classification',
-              '📊 Real-time trend dashboard',
-              '🔐 Multi-tenant workspaces with RBAC',
-              '⚡ CSV bulk import for analysts',
-              '💬 Plain-English Q&A over your data',
-            ].map(f => (
-              <li key={f} className='text-gray-400 text-sm flex items-center gap-2'>
-                <span className='text-green-500 text-xs'>✓</span> {f}
+              { label: 'AI sentiment & theme classification', icon: FaBrain },
+              { label: 'Real-time trend dashboard', icon: FaChartLine },
+              { label: 'Multi-tenant workspaces with RBAC', icon: FaShieldHalved },
+              { label: 'CSV bulk import for analysts', icon: FaBolt },
+              { label: 'Plain-English Q&A over your data', icon: FaComments },
+            ].map(({ label, icon: Icon }) => (
+              <li key={label} className='text-gray-400 text-sm flex items-center gap-2'>
+                <span className='text-green-500'><Icon size={12} /></span>
+                <span>{label}</span>
               </li>
             ))}
           </ul>

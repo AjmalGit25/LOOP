@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import { useToast } from '@/app/components/ToastProvider'
 
 type ImportResult = {
   imported: number
@@ -13,6 +14,7 @@ type ImportResult = {
 export default function ImportPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { showToast } = useToast()
   const inputRef = useRef<HTMLInputElement>(null)
 
   const [file, setFile] = useState<File | null>(null)
@@ -33,12 +35,22 @@ export default function ImportPage() {
     e.preventDefault()
     setDragging(false)
     const dropped = e.dataTransfer.files[0]
-    if (dropped?.name.endsWith('.csv')) setFile(dropped)
-    else setError('Only .csv files are accepted')
+    if (dropped?.name.endsWith('.csv')) {
+      setFile(dropped)
+      setError('')
+      showToast({ title: 'CSV ready', message: `${dropped.name} is ready to import.`, type: 'info', duration: 2200 })
+    } else {
+      setError('Only .csv files are accepted')
+      showToast({ title: 'Invalid file', message: 'Only .csv files are accepted.', type: 'error', duration: 3200 })
+    }
   }
 
   async function handleUpload() {
-    if (!file) return
+    if (!file) {
+      showToast({ title: 'No file selected', message: 'Choose a CSV file before importing.', type: 'error', duration: 3000 })
+      return
+    }
+
     setError('')
     setResult(null)
     setUploading(true)
@@ -51,12 +63,20 @@ export default function ImportPage() {
     setUploading(false)
 
     if (!res.ok) {
-      setError(data.error ?? 'Import failed')
+      const message = data.error ?? 'Import failed'
+      setError(message)
+      showToast({ title: 'Import failed', message, type: 'error', duration: 4000 })
       return
     }
 
     setResult(data)
     setFile(null)
+    showToast({
+      title: 'Import complete',
+      message: `${data.imported ?? 0} records imported successfully.`,
+      type: 'success',
+      duration: 3500,
+    })
   }
 
   if (status === 'loading') {

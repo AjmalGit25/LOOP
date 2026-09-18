@@ -1,15 +1,24 @@
 'use client'
 
 import { useState } from 'react'
-import { FiZap } from 'react-icons/fi'
+import {
+  FiCheck,
+  FiGlobe,
+  FiMessageCircle,
+  FiMail,
+  FiHeadphones,
+  FiMonitor,
+  FiSmartphone,
+  FiZap,
+} from 'react-icons/fi'
 
 const SOURCES = [
-  { value: 'all',     label: 'All channels',  icon: '🌐' },
-  { value: 'slack',   label: 'Slack',         icon: '💬' },
-  { value: 'email',   label: 'Email',         icon: '📧' },
-  { value: 'support', label: 'Support',       icon: '🎧' },
-  { value: 'mobile',  label: 'Mobile',        icon: '📱' },
-  { value: 'web',     label: 'Web',           icon: '🌍' },
+  { value: 'all', label: 'All channels', icon: FiGlobe },
+  { value: 'slack', label: 'Slack', icon: FiMessageCircle },
+  { value: 'email', label: 'Email', icon: FiMail },
+  { value: 'support', label: 'Support', icon: FiHeadphones },
+  { value: 'mobile', label: 'Mobile', icon: FiSmartphone },
+  { value: 'web', label: 'Web', icon: FiMonitor },
 ]
 
 type Props = { onDone?: () => void }
@@ -53,20 +62,24 @@ export default function SimulateChannel({ onDone }: Props) {
       </div>
 
       <div className='grid grid-cols-3 sm:grid-cols-6 gap-2'>
-        {SOURCES.map(s => (
-          <button
-            key={s.value}
-            onClick={() => setSource(s.value)}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-colors
-              ${source === s.value
-                ? 'border-gold-500/50 bg-gold-500/10 text-gold-400'
-                : 'border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300'
-              }`}
-          >
-            <span className='text-lg'>{s.icon}</span>
-            {s.label}
-          </button>
-        ))}
+        {SOURCES.map(s => {
+          const Icon = s.icon
+
+          return (
+            <button
+              key={s.value}
+              onClick={() => setSource(s.value)}
+              className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-colors
+                ${source === s.value
+                  ? 'border-gold-500/50 bg-gold-500/10 text-gold-400'
+                  : 'border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300'
+                }`}
+            >
+              <Icon size={16} />
+              {s.label}
+            </button>
+          )
+        })}
       </div>
 
       <div className='flex items-center gap-3'>
@@ -96,7 +109,7 @@ export default function SimulateChannel({ onDone }: Props) {
 
       {result && (
         <div className='flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2'>
-          <span className='text-green-400 text-sm font-bold'>✓</span>
+          <FiCheck size={14} className='text-green-400 shrink-0' />
           <p className='text-green-400 text-sm'>
             {result.inserted} feedback records inserted from <span className='font-medium'>{SOURCES.find(s => s.value === source)?.label}</span>
           </p>

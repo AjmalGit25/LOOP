@@ -1,16 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { FiCheck, FiCpu, FiX } from 'react-icons/fi'
 
 type Props = { onDone?: () => void }
 type CountData = { unclassified: number; total: number }
 type RunResult = { classified: number; skipped: number; remaining: number; message: string }
 
 export default function ClassifyButton({ onDone }: Props) {
-  const [counts, setCounts]   = useState<CountData | null>(null)
+  const [counts, setCounts] = useState<CountData | null>(null)
   const [loading, setLoading] = useState(false)
-  const [result, setResult]   = useState<RunResult | null>(null)
-  const [error, setError]     = useState('')
+  const [result, setResult] = useState<RunResult | null>(null)
+  const [error, setError] = useState('')
   const [batchSize, setBatch] = useState(20)
 
   async function fetchCounts() {
@@ -51,13 +52,13 @@ export default function ClassifyButton({ onDone }: Props) {
       {/* Status line */}
       <div className='flex items-center gap-3 flex-wrap'>
         {counts && (
-          <span className={`text-xs px-2 py-0.5 rounded-full border ${
-            noneLeft
+          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${noneLeft
               ? 'text-green-400 bg-green-400/10 border-green-400/20'
               : 'text-gold-400 bg-gold-400/10 border-gold-400/20'
-          }`}>
+            }`}>
+            {noneLeft ? <FiCheck size={12} /> : null}
             {noneLeft
-              ? '✓ All classified'
+              ? 'All classified'
               : `${counts.unclassified} of ${counts.total} unclassified`
             }
           </span>
@@ -76,7 +77,12 @@ export default function ClassifyButton({ onDone }: Props) {
               <span className='w-3 h-3 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin shrink-0' />
               Classifying...
             </>
-          ) : '🧠 Run AI Classification'}
+          ) : (
+            <>
+              <FiCpu size={14} />
+              Run AI Classification
+            </>
+          )}
         </button>
 
         {/* Batch size */}
@@ -96,10 +102,10 @@ export default function ClassifyButton({ onDone }: Props) {
 
       {/* Result / error */}
       {result && !loading && (
-        <p className='text-green-400 text-xs'>✓ {result.message}</p>
+        <p className='inline-flex items-center gap-1 text-green-400 text-xs'><FiCheck size={12} /> {result.message}</p>
       )}
       {error && !loading && (
-        <p className='text-red-400 text-xs'>✗ {error}</p>
+        <p className='inline-flex items-center gap-1 text-red-400 text-xs'><FiX size={12} /> {error}</p>
       )}
 
       <p className='text-gray-600 text-xs'>

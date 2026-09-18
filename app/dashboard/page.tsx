@@ -11,6 +11,7 @@ import SimulateChannel from '@/app/components/dashboard/SimulateChannel'
 import ClassifyButton from '@/app/components/dashboard/ClassifyButton'
 import ThemeExplorer from '@/app/components/dashboard/ThemeExplorer'
 import TrendsView from '@/app/components/dashboard/TrendsView'
+import { useToast } from '@/app/components/ToastProvider'
 
 type Tab = 'overview' | 'feedback' | 'analytics' | 'themes' | 'trends' | 'admin'
 
@@ -26,6 +27,7 @@ const TAB_LABELS: Record<Tab, string> = {
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { showToast } = useToast()
   const [tab, setTab] = useState<Tab>('overview')
   const [overviewKey, setOverviewKey] = useState(0)
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
@@ -59,7 +61,8 @@ export default function DashboardPage() {
       router.push(`/reports/${data.report.id}`)
     } catch (error) {
       console.error('[dashboard] report generation failed:', error)
-      window.alert('Unable to generate the report right now.')
+      const message = 'Unable to generate the report right now.'
+      showToast({ title: 'Report failed', message, type: 'error', duration: 4000 })
     } finally {
       setIsGeneratingReport(false)
     }
@@ -107,8 +110,8 @@ export default function DashboardPage() {
             </p>
           </div>
           <span className={`text-xs font-bold px-3 py-1 rounded-full border ${isAdmin ? 'text-gold-400 bg-gold-400/10 border-gold-400/20'
-              : isAnalyst ? 'text-blue-400 bg-blue-400/10 border-blue-400/20'
-                : 'text-gray-400 bg-gray-400/10 border-gray-400/20'
+            : isAnalyst ? 'text-blue-400 bg-blue-400/10 border-blue-400/20'
+              : 'text-gray-400 bg-gray-400/10 border-gray-400/20'
             }`}>
             {role}
           </span>
@@ -121,8 +124,8 @@ export default function DashboardPage() {
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`text-sm px-4 py-3 border-b-2 transition-colors ${tab === t.id
-                  ? 'border-gold-500 text-white font-medium'
-                  : 'border-transparent text-gray-500 hover:text-gray-300'
+                ? 'border-gold-500 text-white font-medium'
+                : 'border-transparent text-gray-500 hover:text-gray-300'
                 }`}
             >
               {t.label}

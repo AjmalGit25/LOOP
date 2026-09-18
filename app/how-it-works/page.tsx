@@ -1,11 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import { FaChartLine, FaCrown, FaUser } from 'react-icons/fa6'
 
 const roleCards = [
   {
     title: 'Admin',
-    emoji: '👑',
+    icon: FaCrown,
     accent: 'from-gold-300 to-gold-600',
     summary: 'Manages the workspace and access control.',
     bullets: [
@@ -16,7 +17,7 @@ const roleCards = [
   },
   {
     title: 'Analyst',
-    emoji: '📊',
+    icon: FaChartLine,
     accent: 'from-amber-300 to-yellow-500',
     summary: 'Works with the data to uncover patterns and opportunities.',
     bullets: [
@@ -27,7 +28,7 @@ const roleCards = [
   },
   {
     title: 'Viewer',
-    emoji: '👤',
+    icon: FaUser,
     accent: 'from-slate-300 to-slate-500',
     summary: 'Consumes insights without managing the workspace itself.',
     bullets: [
@@ -77,27 +78,31 @@ export default function HowItWorksPage() {
           </section>
 
           <section className='mt-10 grid gap-5 md:grid-cols-3'>
-            {roleCards.map((role) => (
-              <article
-                key={role.title}
-                className='rounded-2xl border border-gray-800 bg-gray-950/70 p-6 shadow-[0_0_30px_rgba(212,175,55,0.06)] backdrop-blur-sm'
-              >
-                <div className={`mb-4 inline-flex rounded-full bg-gradient-to-r ${role.accent} px-3 py-2 text-xl shadow-lg`}>
-                  {role.emoji}
-                </div>
-                <h2 className='text-2xl font-semibold text-white'>{role.title}</h2>
-                <p className='mt-2 text-sm text-gray-400'>{role.summary}</p>
+            {roleCards.map((role) => {
+              const Icon = role.icon
 
-                <ul className='mt-5 space-y-3 text-sm text-gray-300'>
-                  {role.bullets.map((item) => (
-                    <li key={item} className='flex items-start gap-2'>
-                      <span className='mt-1 h-2 w-2 rounded-full bg-gold-500' />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ))}
+              return (
+                <article
+                  key={role.title}
+                  className='rounded-2xl border border-gray-800 bg-gray-950/70 p-6 shadow-[0_0_30px_rgba(212,175,55,0.06)] backdrop-blur-sm'
+                >
+                  <div className={`mb-4 inline-flex rounded-full bg-gradient-to-r ${role.accent} p-3 text-xl text-black shadow-lg`}>
+                    <Icon size={18} />
+                  </div>
+                  <h2 className='text-2xl font-semibold text-white'>{role.title}</h2>
+                  <p className='mt-2 text-sm text-gray-400'>{role.summary}</p>
+
+                  <ul className='mt-5 space-y-3 text-sm text-gray-300'>
+                    {role.bullets.map((item) => (
+                      <li key={item} className='flex items-start gap-2'>
+                        <span className='mt-1 h-2 w-2 rounded-full bg-gold-500' />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              )
+            })}
           </section>
 
           <section className='mt-12 rounded-2xl border border-gray-800 bg-gray-950/60 p-6 sm:p-8'>

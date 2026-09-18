@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { FiSearch, FiX, FiChevronLeft, FiChevronRight, FiSliders } from 'react-icons/fi'
+import { FiCheck, FiChevronLeft, FiChevronRight, FiCpu, FiSearch, FiSliders, FiX } from 'react-icons/fi'
 
 type Theme = { id: string; name: string; color: string | null }
 type FeedbackTheme = { theme: { name: string; color: string | null } }
@@ -611,12 +611,13 @@ export default function FeedbackInbox({ role }: Props) {
                     key={s}
                     disabled={!canEdit || selected.status === s || updating === selected.id}
                     onClick={() => updateStatus(selected.id, s)}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-all disabled:cursor-not-allowed ${selected.status === s
+                    className={`inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full border transition-all disabled:cursor-not-allowed ${selected.status === s
                       ? `${STATUS_STYLE[s]} font-semibold`
                       : 'text-gray-500 border-gray-700 hover:border-gray-500 hover:text-gray-300 disabled:opacity-30'
                       }`}
                   >
-                    {selected.status === s ? `✓ ${s}` : s}
+                    {selected.status === s ? <FiCheck size={12} /> : null}
+                    {s}
                   </button>
                 ))}
               </div>
@@ -635,11 +636,13 @@ export default function FeedbackInbox({ role }: Props) {
                   >
                     {reclassifying ? (
                       <><span className='w-3 h-3 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin' />Re-classifying...</>
-                    ) : '🧠 Re-classify with AI'}
+                    ) : (
+                      <><FiCpu size={12} />Re-classify with AI</>
+                    )}
                   </button>
                   {reclassifyMsg && (
-                    <p className={`text-xs ${reclassifyMsg.includes('success') ? 'text-green-400' : 'text-red-400'}`}>
-                      {reclassifyMsg.includes('success') ? '✓' : '✗'} {reclassifyMsg}
+                    <p className={`inline-flex items-center gap-1 text-xs ${reclassifyMsg.includes('success') ? 'text-green-400' : 'text-red-400'}`}>
+                      {reclassifyMsg.includes('success') ? <FiCheck size={12} /> : <FiX size={12} />} {reclassifyMsg}
                     </p>
                   )}
                 </div>

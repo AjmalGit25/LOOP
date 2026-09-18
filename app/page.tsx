@@ -1,37 +1,46 @@
 'use client'
 
 import Link from 'next/link'
-import { useSession } from 'next-auth/react';
-import Counter from "./components/Counter";
+import { useSession } from 'next-auth/react'
+import {
+  FiBarChart,
+  FiCheck,
+  FiCpu,
+  FiLink2,
+  FiMessageSquare,
+  FiShield,
+  FiZap,
+} from 'react-icons/fi'
+import Counter from './components/Counter'
 
 const FEATURES = [
   {
-    icon: '⚡',
+    icon: FiZap,
     title: 'Ingest at scale',
     desc: 'Import feedback from support tickets, app-store reviews, surveys, and sales notes via CSV or API.',
   },
   {
-    icon: '🧠',
+    icon: FiCpu,
     title: 'AI classification',
     desc: 'Claude-powered sentiment analysis and theme clustering — no manual tagging required.',
   },
   {
-    icon: '📊',
+    icon: FiBarChart,
     title: 'Trend dashboard',
     desc: 'Spot what is rising, falling, or exploding across channels before it becomes a crisis.',
   },
   {
-    icon: '💬',
+    icon: FiMessageSquare,
     title: 'Plain-English Q&A',
     desc: 'Ask "What do customers complain about most?" and get a direct answer backed by real data.',
   },
   {
-    icon: '🔐',
+    icon: FiShield,
     title: 'Multi-tenant RBAC',
     desc: 'Workspaces with Admin, Analyst, and Viewer roles. Every query is scoped — no data leaks.',
   },
   {
-    icon: '🔗',
+    icon: FiLink2,
     title: 'Clean API layer',
     desc: 'Every feature is backed by a typed REST API. Integrate with your existing toolchain.',
   },
@@ -262,13 +271,19 @@ export default function LandingPage() {
           <section className='px-4 sm:px-6 py-10 sm:py-12 max-w-5xl mx-auto w-full'>
             <h2 className='text-white font-semibold text-xl text-center mb-6 sm:mb-8'>Everything you need</h2>
             <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
-              {FEATURES.map((f) => (
-                <div key={f.title} className='bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-2 hover:border-gray-700 transition-colors'>
-                  <span className='text-2xl'>{f.icon}</span>
-                  <h3 className='text-white font-semibold text-sm'>{f.title}</h3>
-                  <p className='text-gray-500 text-xs leading-relaxed'>{f.desc}</p>
-                </div>
-              ))}
+              {FEATURES.map((f) => {
+                const Icon = f.icon
+
+                return (
+                  <div key={f.title} className='bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-2 hover:border-gray-700 transition-colors'>
+                    <span className='flex h-10 w-10 items-center justify-center rounded-lg border border-gold-500/20 bg-gold-500/10 text-gold-400'>
+                      <Icon size={18} />
+                    </span>
+                    <h3 className='text-white font-semibold text-sm'>{f.title}</h3>
+                    <p className='text-gray-500 text-sm leading-relaxed'>{f.desc}</p>
+                  </div>
+                )
+              })}
             </div>
           </section>
 
@@ -287,7 +302,8 @@ export default function LandingPage() {
                     <ul className='flex flex-col gap-1'>
                       {perms.map(p => (
                         <li key={p} className='text-gray-400 text-xs flex items-center gap-1.5'>
-                          <span className='text-green-500'>✓</span> {p}
+                          <FiCheck size={12} className='text-green-500 shrink-0' />
+                          <span>{p}</span>
                         </li>
                       ))}
                     </ul>
