@@ -17,8 +17,7 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [quoteIdx] = useState(() => Math.floor(Math.random() * TESTIMONIALS.length))
-  const quote = TESTIMONIALS[quoteIdx]
+  const quote = TESTIMONIALS[0]
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })

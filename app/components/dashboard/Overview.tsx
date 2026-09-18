@@ -75,8 +75,13 @@ export default function Overview() {
     }
   }
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { void loadStats() }, [])
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      void loadStats()
+    })
+
+    return () => cancelAnimationFrame(id)
+  }, [])
 
   if (loading) return (
     <div className='grid grid-cols-2 lg:grid-cols-4 gap-3 animate-pulse'>

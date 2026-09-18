@@ -85,8 +85,13 @@ export default function TrendsView({ onDrillTheme }: Props) {
     }
   }, [])
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { void fetchTrends(days) }, [days, fetchTrends])
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      void fetchTrends(days)
+    })
+
+    return () => cancelAnimationFrame(id)
+  }, [days, fetchTrends])
 
   const spikingThemes = data?.themes.filter(t => t.spiking) ?? []
   const stableThemes = data?.themes.filter(t => !t.spiking) ?? []

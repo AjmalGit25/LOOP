@@ -90,9 +90,13 @@ export default function FeedbackInbox({ role }: Props) {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [search])
 
-  // Reset page on any filter change
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setPage(1) }, [statusFilter, channelFilter, sentimentFilter, themeFilter, datePreset])
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      setPage(1)
+    })
+
+    return () => cancelAnimationFrame(id)
+  }, [statusFilter, channelFilter, sentimentFilter, themeFilter, datePreset])
 
   const fetchFeedback = useCallback(async () => {
     setLoading(true)
@@ -120,8 +124,13 @@ export default function FeedbackInbox({ role }: Props) {
     }
   }, [page, debouncedSearch, statusFilter, channelFilter, sentimentFilter, themeFilter, datePreset])
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { void fetchFeedback() }, [fetchFeedback])
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      void fetchFeedback()
+    })
+
+    return () => cancelAnimationFrame(id)
+  }, [fetchFeedback])
 
   async function reclassify(id: string) {
     setReclassifying(true)

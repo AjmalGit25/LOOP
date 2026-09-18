@@ -86,7 +86,7 @@ export default function ImportPage() {
         <div className='bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col gap-1'>
           <p className='text-gray-400 text-xs font-bold uppercase tracking-wider mb-1'>Expected CSV format</p>
           <code className='text-green-400 text-xs'>content,channel,sourceRef,customerLabel</code>
-          <code className='text-gray-500 text-xs'>&quot;Dashboard is slow&quot;,web,ref-001,user-42</code>
+          <code className='text-gray-500 text-xs'>&ldquo;Dashboard is slow&rdquo;,web,ref-001,user-42</code>
           <p className='text-gray-600 text-xs mt-1'>sourceRef and customerLabel are optional.</p>
         </div>
 
