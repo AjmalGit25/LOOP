@@ -17,28 +17,28 @@ type ThemeTrend = {
 }
 
 type TrendsData = {
-  period:         { start: string; end: string; days: number }
+  period: { start: string; end: string; days: number }
   previousPeriod: { start: string; end: string }
-  themes:         ThemeTrend[]
-  timeline:       Record<string, string | number>[]
+  themes: ThemeTrend[]
+  timeline: Record<string, string | number>[]
 }
 
 type Props = { onDrillTheme?: (themeId: string, themeName: string) => void }
 
 const PERIOD_OPTIONS = [
-  { label: 'Last 7 days',  value: 7  },
+  { label: 'Last 7 days', value: 7 },
   { label: 'Last 14 days', value: 14 },
   { label: 'Last 30 days', value: 30 },
 ]
 
 const FALLBACK_COLORS = [
-  '#d4af37','#60a5fa','#4ade80','#f87171',
-  '#a78bfa','#fb923c','#34d399','#f472b6',
+  '#d4af37', '#60a5fa', '#4ade80', '#f87171',
+  '#a78bfa', '#fb923c', '#34d399', '#f472b6',
 ]
 
 const tooltipStyle = {
   contentStyle: { background: '#0a0a0a', border: '1px solid #1f2937', borderRadius: 8, fontSize: 11 },
-  labelStyle:   { color: '#6b7280' },
+  labelStyle: { color: '#6b7280' },
 }
 
 function ChangeChip({ change, spiking }: { change: number | null; spiking: boolean }) {
@@ -66,10 +66,10 @@ function ChangeChip({ change, spiking }: { change: number | null; spiking: boole
 }
 
 export default function TrendsView({ onDrillTheme }: Props) {
-  const [days, setDays]       = useState(7)
-  const [data, setData]       = useState<TrendsData | null>(null)
+  const [days, setDays] = useState(7)
+  const [data, setData] = useState<TrendsData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState('')
+  const [error, setError] = useState('')
 
   const fetchTrends = useCallback(async (d: number) => {
     setLoading(true)
@@ -85,10 +85,11 @@ export default function TrendsView({ onDrillTheme }: Props) {
     }
   }, [])
 
-  useEffect(() => { fetchTrends(days) }, [days, fetchTrends])
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void fetchTrends(days) }, [days, fetchTrends])
 
   const spikingThemes = data?.themes.filter(t => t.spiking) ?? []
-  const stableThemes  = data?.themes.filter(t => !t.spiking) ?? []
+  const stableThemes = data?.themes.filter(t => !t.spiking) ?? []
 
   // Only chart themes that have at least one non-zero day
   const chartThemes = (data?.themes ?? []).filter(t => t.currentCount > 0)
@@ -109,11 +110,10 @@ export default function TrendsView({ onDrillTheme }: Props) {
             <button
               key={opt.value}
               onClick={() => setDays(opt.value)}
-              className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-                days === opt.value
-                  ? 'border-gold-500/40 bg-gold-500/10 text-gold-400'
-                  : 'border-gray-700 text-gray-500 hover:text-white hover:border-gray-600'
-              }`}
+              className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${days === opt.value
+                ? 'border-gold-500/40 bg-gold-500/10 text-gold-400'
+                : 'border-gray-700 text-gray-500 hover:text-white hover:border-gray-600'
+                }`}
             >
               {opt.label}
             </button>
@@ -121,7 +121,17 @@ export default function TrendsView({ onDrillTheme }: Props) {
         </div>
       </div>
 
-      {error && <p className='text-red-400 text-sm text-center py-8'>{error}</p>}
+      {error && (
+        <div className='flex flex-col items-center justify-center rounded-xl border border-red-500/30 bg-red-500/5 p-6 text-center'>
+          <p className='text-red-400 text-sm font-medium'>{error}</p>
+          <button
+            onClick={() => fetchTrends(days)}
+            className='mt-3 px-3 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-300 text-xs hover:border-red-500/50 transition-colors'
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Volume chart */}
       <div className='bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-3'>

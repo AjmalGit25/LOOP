@@ -53,17 +53,30 @@ function StatCard({ label, value, sub, color }: { label: string; value: number; 
 export default function Overview() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  useEffect(() => {
-    const to = new Date()
-    const from = new Date()
-    from.setDate(to.getDate() - 30)
+  async function loadStats() {
+    setLoading(true)
+    setError('')
+    try {
+      const to = new Date()
+      const from = new Date()
+      from.setDate(to.getDate() - 30)
 
-    fetch(`/api/feedback/stats?from=${from.toISOString()}&to=${to.toISOString()}`)
-      .then(r => r.json())
-      .then(d => { setStats(d); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
+      const res = await fetch(`/api/feedback/stats?from=${from.toISOString()}&to=${to.toISOString()}`)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error ?? 'Unable to load dashboard stats')
+      setStats(data)
+    } catch (err) {
+      console.error('[overview] stats failed:', err)
+      setError('Unable to load dashboard metrics. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void loadStats() }, [])
 
   if (loading) return (
     <div className='grid grid-cols-2 lg:grid-cols-4 gap-3 animate-pulse'>
@@ -73,7 +86,20 @@ export default function Overview() {
     </div>
   )
 
-  if (!stats) return <p className='text-gray-600 text-sm text-center py-12'>Failed to load analytics.</p>
+  if (error || !stats) {
+    return (
+      <div className='flex flex-col items-center justify-center rounded-xl border border-red-500/30 bg-red-500/5 p-8 text-center'>
+        <p className='text-red-400 text-sm font-medium'>Unable to load dashboard metrics.</p>
+        <p className='text-gray-400 text-xs mt-2'>{error || 'The dashboard could not be loaded right now.'}</p>
+        <button
+          onClick={loadStats}
+          className='mt-4 px-3 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-300 text-xs hover:border-red-500/50 transition-colors'
+        >
+          Retry
+        </button>
+      </div>
+    )
+  }
 
   const pos = stats.bySentiment.find(s => s.sentiment === 'POS')?.count ?? 0
   const neg = stats.bySentiment.find(s => s.sentiment === 'NEG')?.count ?? 0

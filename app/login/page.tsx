@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { FaArrowRight } from 'react-icons/fa6'
 
@@ -12,11 +13,11 @@ const TESTIMONIALS = [
 ]
 
 export default function LoginPage() {
+  const router = useRouter()
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [quoteIdx, setQuoteIdx] = useState(0)
-  useEffect(() => { setQuoteIdx(Math.floor(Math.random() * TESTIMONIALS.length)) }, [])
+  const [quoteIdx] = useState(() => Math.floor(Math.random() * TESTIMONIALS.length))
   const quote = TESTIMONIALS[quoteIdx]
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,7 +42,7 @@ export default function LoginPage() {
       return
     }
 
-    window.location.href = '/dashboard'
+    router.push('/dashboard')
   }
 
   return (
@@ -85,7 +86,7 @@ export default function LoginPage() {
 
         {/* Testimonial */}
         <div className='bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-2'>
-          <p className='text-gray-300 text-sm italic'>"{quote.quote}"</p>
+          <p className='text-gray-300 text-sm italic'>&quot;{quote.quote}&quot;</p>
           <p className='text-gray-600 text-xs'>— {quote.author}</p>
         </div>
       </div>

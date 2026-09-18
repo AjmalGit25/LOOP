@@ -34,13 +34,23 @@ export default function FeedbackPage() {
   useEffect(() => {
     if (status === 'unauthenticated') { router.replace('/login'); return }
     if (status === 'authenticated') fetchFeedback()
-  }, [status])
+  }, [status, router])
 
   async function fetchFeedback() {
-    const res = await fetch('/api/feedback')
-    const data = await res.json()
-    setList(data.feedback ?? [])
-    setLoadingList(false)
+    try {
+      setLoadingList(true)
+      setError('')
+      const res = await fetch('/api/feedback')
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error ?? 'Unable to load feedback')
+      setList(data.feedback ?? [])
+    } catch (err) {
+      console.error('[feedback-page] load failed:', err)
+      setError('Unable to load feedback. Please try again.')
+      setList([])
+    } finally {
+      setLoadingList(false)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -57,7 +67,8 @@ export default function FeedbackPage() {
     setSubmitting(false)
 
     if (!res.ok) {
-      setError('Failed to submit feedback')
+      const data = await res.json().catch(() => ({ error: 'Failed to submit feedback' }))
+      setError(data.error ?? 'Failed to submit feedback')
       return
     }
 
@@ -145,6 +156,25 @@ export default function FeedbackPage() {
             {loadingList ? 'Loading...' : `${list.length} feedback item${list.length !== 1 ? 's' : ''}`}
           </p>
 
+          {error && (
+            <div className='rounded-xl border border-red-500/30 bg-red-500/5 p-4 text-center'>
+              <p className='text-red-400 text-sm font-medium'>{error}</p>
+              <button
+                onClick={fetchFeedback}
+                className='mt-3 px-3 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-300 text-xs hover:border-red-500/50 transition-colors'
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {loadingList && !error && (
+            <div className='rounded-xl border border-gray-800 bg-gray-900 p-4 animate-pulse'>
+              <div className='h-4 bg-gray-800 rounded w-3/4' />
+              <div className='h-4 bg-gray-800 rounded w-1/2 mt-3' />
+            </div>
+          )}
+
           {list.map((f) => (
             <div key={f.id} className='bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col gap-2'>
               <p className='text-gray-200 text-sm leading-relaxed'>{f.content}</p>
@@ -162,8 +192,11 @@ export default function FeedbackPage() {
             </div>
           ))}
 
-          {!loadingList && list.length === 0 && (
-            <p className='text-gray-600 text-sm text-center py-8'>No feedback yet. Submit the first one above.</p>
+          {!loadingList && !error && list.length === 0 && (
+            <div className='rounded-xl border border-gray-800 bg-gray-900 p-6 text-center'>
+              <p className='text-white text-sm font-medium'>No feedback yet.</p>
+              <p className='text-gray-500 text-xs mt-2'>Submit the first customer comment above to get started.</p>
+            </div>
           )}
         </div>
 

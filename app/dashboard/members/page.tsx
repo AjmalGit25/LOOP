@@ -20,9 +20,9 @@ export default function MembersPage() {
 
   useEffect(() => {
     if (status === 'unauthenticated') { router.replace('/login'); return }
-    if (status === 'authenticated' && session.user.role !== 'ADMIN') { router.replace('/dashboard'); return }
+    if (status === 'authenticated' && session.user.role !== 'ADMIN') { router.replace('/forbidden'); return }
     if (status === 'authenticated') fetchMembers()
-  }, [status])
+  }, [status, router, session])
 
   async function fetchMembers() {
     const res = await fetch('/api/workspace/members')

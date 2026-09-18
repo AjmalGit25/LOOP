@@ -21,7 +21,7 @@ type Pagination = { page: number; limit: number; total: number; totalPages: numb
 type Props = { role: string }
 
 const STATUS_STYLE: Record<string, string> = {
-  NEW:      'text-blue-400 bg-blue-400/10 border-blue-400/20',
+  NEW: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
   REVIEWED: 'text-gold-400 bg-gold-400/10 border-gold-400/20',
   ACTIONED: 'text-green-400 bg-green-400/10 border-green-400/20',
 }
@@ -32,17 +32,17 @@ const SENTIMENT_STYLE: Record<string, string> = {
 }
 const SENTIMENT_LABEL: Record<string, string> = { POS: '▲ Positive', NEU: '● Neutral', NEG: '▼ Negative' }
 
-const STATUSES   = ['ALL', 'NEW', 'REVIEWED', 'ACTIONED']
-const CHANNELS   = ['ALL', 'web', 'email', 'mobile', 'support', 'social', 'slack']
+const STATUSES = ['ALL', 'NEW', 'REVIEWED', 'ACTIONED']
+const CHANNELS = ['ALL', 'web', 'email', 'mobile', 'support', 'social', 'slack']
 const SENTIMENTS = ['ALL', 'POS', 'NEU', 'NEG']
 const LIMIT = 10
 
 const DATE_PRESETS = [
-  { label: 'All time',    value: '' },
-  { label: 'Today',       value: '1' },
+  { label: 'All time', value: '' },
+  { label: 'Today', value: '1' },
   { label: 'Last 7 days', value: '7' },
-  { label: 'Last 30 days',value: '30' },
-  { label: 'Last 90 days',value: '90' },
+  { label: 'Last 30 days', value: '30' },
+  { label: 'Last 90 days', value: '90' },
 ]
 
 function daysAgoISO(days: number) {
@@ -54,23 +54,23 @@ function daysAgoISO(days: number) {
 export default function FeedbackInbox({ role }: Props) {
   const canEdit = role === 'ADMIN' || role === 'ANALYST'
 
-  const [items, setItems]           = useState<Feedback[]>([])
+  const [items, setItems] = useState<Feedback[]>([])
   const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: LIMIT, total: 0, totalPages: 1 })
-  const [loading, setLoading]       = useState(true)
-  const [error, setError]           = useState('')
-  const [themes, setThemes]         = useState<Theme[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [themes, setThemes] = useState<Theme[]>([])
 
-  const [search, setSearch]         = useState('')
+  const [search, setSearch] = useState('')
   const [debouncedSearch, setDebounced] = useState('')
-  const [statusFilter, setStatus]   = useState('ALL')
+  const [statusFilter, setStatus] = useState('ALL')
   const [channelFilter, setChannel] = useState('ALL')
   const [sentimentFilter, setSentiment] = useState('ALL')
-  const [themeFilter, setTheme]     = useState('ALL')
+  const [themeFilter, setTheme] = useState('ALL')
   const [datePreset, setDatePreset] = useState('')
-  const [page, setPage]             = useState(1)
+  const [page, setPage] = useState(1)
 
-  const [selected, setSelected]       = useState<Feedback | null>(null)
-  const [updating, setUpdating]       = useState<string | null>(null)
+  const [selected, setSelected] = useState<Feedback | null>(null)
+  const [updating, setUpdating] = useState<string | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [reclassifying, setReclassifying] = useState(false)
   const [reclassifyMsg, setReclassifyMsg] = useState('')
@@ -91,6 +91,7 @@ export default function FeedbackInbox({ role }: Props) {
   }, [search])
 
   // Reset page on any filter change
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setPage(1) }, [statusFilter, channelFilter, sentimentFilter, themeFilter, datePreset])
 
   const fetchFeedback = useCallback(async () => {
@@ -98,14 +99,14 @@ export default function FeedbackInbox({ role }: Props) {
     setError('')
     try {
       const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) })
-      if (debouncedSearch)          params.set('search',    debouncedSearch)
-      if (statusFilter   !== 'ALL') params.set('status',    statusFilter)
-      if (channelFilter  !== 'ALL') params.set('channel',   channelFilter)
+      if (debouncedSearch) params.set('search', debouncedSearch)
+      if (statusFilter !== 'ALL') params.set('status', statusFilter)
+      if (channelFilter !== 'ALL') params.set('channel', channelFilter)
       if (sentimentFilter !== 'ALL') params.set('sentiment', sentimentFilter)
-      if (themeFilter    !== 'ALL') params.set('theme',     themeFilter)
+      if (themeFilter !== 'ALL') params.set('theme', themeFilter)
       if (datePreset) {
         params.set('from', daysAgoISO(parseInt(datePreset)))
-        params.set('to',   new Date().toISOString().split('T')[0])
+        params.set('to', new Date().toISOString().split('T')[0])
       }
       const res = await fetch(`/api/feedback?${params}`)
       if (!res.ok) throw new Error()
@@ -119,7 +120,8 @@ export default function FeedbackInbox({ role }: Props) {
     }
   }, [page, debouncedSearch, statusFilter, channelFilter, sentimentFilter, themeFilter, datePreset])
 
-  useEffect(() => { fetchFeedback() }, [fetchFeedback])
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void fetchFeedback() }, [fetchFeedback])
 
   async function reclassify(id: string) {
     setReclassifying(true)
@@ -132,16 +134,16 @@ export default function FeedbackInbox({ role }: Props) {
       // Update the selected item in-place so the modal reflects new values immediately
       setSelected(prev => prev ? {
         ...prev,
-        sentiment:      cls.sentiment,
+        sentiment: cls.sentiment,
         sentimentScore: cls.sentimentScore,
-        sourceRef:      cls.summary,
+        sourceRef: cls.summary,
       } : prev)
       // Also update the table row
       setItems(prev => prev.map(f => f.id === id ? {
         ...f,
-        sentiment:      cls.sentiment,
+        sentiment: cls.sentiment,
         sentimentScore: cls.sentimentScore,
-        sourceRef:      cls.summary,
+        sourceRef: cls.summary,
       } : f))
       setReclassifyMsg('Re-classified successfully')
     } catch (err) {
@@ -175,12 +177,12 @@ export default function FeedbackInbox({ role }: Props) {
   }
 
   const activeFilters = [
-    statusFilter    !== 'ALL' && { key: 'status',    label: statusFilter,    clear: () => setStatus('ALL') },
-    channelFilter   !== 'ALL' && { key: 'channel',   label: channelFilter,   clear: () => setChannel('ALL') },
+    statusFilter !== 'ALL' && { key: 'status', label: statusFilter, clear: () => setStatus('ALL') },
+    channelFilter !== 'ALL' && { key: 'channel', label: channelFilter, clear: () => setChannel('ALL') },
     sentimentFilter !== 'ALL' && { key: 'sentiment', label: SENTIMENT_LABEL[sentimentFilter], clear: () => setSentiment('ALL') },
-    themeFilter     !== 'ALL' && { key: 'theme',     label: themeFilter,     clear: () => setTheme('ALL') },
-    datePreset               && { key: 'date',      label: DATE_PRESETS.find(d => d.value === datePreset)?.label ?? '', clear: () => setDatePreset('') },
-    debouncedSearch          && { key: 'search',    label: `"${debouncedSearch}"`, clear: () => { setSearch(''); setDebounced('') } },
+    themeFilter !== 'ALL' && { key: 'theme', label: themeFilter, clear: () => setTheme('ALL') },
+    datePreset && { key: 'date', label: DATE_PRESETS.find(d => d.value === datePreset)?.label ?? '', clear: () => setDatePreset('') },
+    debouncedSearch && { key: 'search', label: `"${debouncedSearch}"`, clear: () => { setSearch(''); setDebounced('') } },
   ].filter(Boolean) as { key: string; label: string; clear: () => void }[]
 
   return (
@@ -204,11 +206,10 @@ export default function FeedbackInbox({ role }: Props) {
         </div>
         <button
           onClick={() => setFiltersOpen(o => !o)}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
-            filtersOpen || activeFilters.length > 0
-              ? 'border-gold-500/40 bg-gold-500/10 text-gold-400'
-              : 'border-gray-800 bg-gray-900 text-gray-400 hover:text-white hover:border-gray-700'
-          }`}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${filtersOpen || activeFilters.length > 0
+            ? 'border-gold-500/40 bg-gold-500/10 text-gold-400'
+            : 'border-gray-800 bg-gray-900 text-gray-400 hover:text-white hover:border-gray-700'
+            }`}
         >
           <FiSliders size={13} />
           Filters
@@ -321,7 +322,17 @@ export default function FeedbackInbox({ role }: Props) {
         }
       </p>
 
-      {error && <p className='text-red-400 text-sm text-center py-6'>{error}</p>}
+      {error && (
+        <div className='flex flex-col items-center justify-center rounded-xl border border-red-500/30 bg-red-500/5 p-6 text-center'>
+          <p className='text-red-400 text-sm font-medium'>{error}</p>
+          <button
+            onClick={fetchFeedback}
+            className='mt-3 px-3 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-300 text-xs hover:border-red-500/50 transition-colors'
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Table */}
       {!error && (
@@ -431,11 +442,11 @@ export default function FeedbackInbox({ role }: Props) {
 
                     <td className='px-4 py-3' onClick={e => e.stopPropagation()}>
                       <button
-                          onClick={() => { setSelected(f); setReclassifyMsg('') }}
-                          className='text-xs text-gray-500 hover:text-white border border-gray-700 hover:border-gray-500 px-2 py-0.5 rounded-lg transition-colors'
-                        >
-                          View
-                        </button>
+                        onClick={() => { setSelected(f); setReclassifyMsg('') }}
+                        className='text-xs text-gray-500 hover:text-white border border-gray-700 hover:border-gray-500 px-2 py-0.5 rounded-lg transition-colors'
+                      >
+                        View
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -473,11 +484,10 @@ export default function FeedbackInbox({ role }: Props) {
                     <button
                       key={n}
                       onClick={() => setPage(n as number)}
-                      className={`text-xs w-7 h-7 rounded-lg border transition-colors ${
-                        page === n
-                          ? 'border-gold-500/40 bg-gold-500/10 text-gold-400'
-                          : 'border-gray-700 text-gray-500 hover:text-white hover:border-gray-500'
-                      }`}
+                      className={`text-xs w-7 h-7 rounded-lg border transition-colors ${page === n
+                        ? 'border-gold-500/40 bg-gold-500/10 text-gold-400'
+                        : 'border-gray-700 text-gray-500 hover:text-white hover:border-gray-500'
+                        }`}
                     >
                       {n}
                     </button>
@@ -592,11 +602,10 @@ export default function FeedbackInbox({ role }: Props) {
                     key={s}
                     disabled={!canEdit || selected.status === s || updating === selected.id}
                     onClick={() => updateStatus(selected.id, s)}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-all disabled:cursor-not-allowed ${
-                      selected.status === s
-                        ? `${STATUS_STYLE[s]} font-semibold`
-                        : 'text-gray-500 border-gray-700 hover:border-gray-500 hover:text-gray-300 disabled:opacity-30'
-                    }`}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-all disabled:cursor-not-allowed ${selected.status === s
+                      ? `${STATUS_STYLE[s]} font-semibold`
+                      : 'text-gray-500 border-gray-700 hover:border-gray-500 hover:text-gray-300 disabled:opacity-30'
+                      }`}
                   >
                     {selected.status === s ? `✓ ${s}` : s}
                   </button>
