@@ -121,7 +121,7 @@ export default function SignupPage() {
       </div>
 
       {/* Right panel — form */}
-      <div className='flex flex-1 flex-col items-center justify-center px-6 py-12'>
+      <div className='flex flex-1 flex-col items-center justify-center px-6 py-12 bg-gray-950'>
         <div className='w-full max-w-sm flex flex-col gap-6'>
 
           {/* Header */}

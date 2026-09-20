@@ -65,7 +65,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className='flex flex-1 min-h-[calc(100vh-57px)]'>
+    <div className='flex flex-1 min-h-screen'>
 
       {/* Left panel */}
       <div className='hidden lg:flex flex-col justify-between w-1/2 bg-gray-950 border-r border-gray-800 p-12'>
@@ -112,7 +112,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right panel — form */}
-      <div className='flex flex-1 flex-col items-center justify-center px-6 py-12'>
+      <div className='flex flex-1 flex-col items-center justify-center px-6 py-12 bg-gray-950'>
         <div className='w-full max-w-sm flex flex-col gap-6'>
 
           {/* Header */}

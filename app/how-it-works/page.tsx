@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { FaChartLine, FaCrown, FaUser } from 'react-icons/fa6'
+import GlowingBackground from '../components/GlowingBackground'
 
 const roleCards = [
   {
@@ -41,25 +42,11 @@ const roleCards = [
 
 export default function HowItWorksPage() {
   return (
-    <div className='relative min-h-screen overflow-hidden bg-[#09090b] text-white'>
-      <div aria-hidden='true' className='pointer-events-none absolute inset-0 overflow-hidden'>
-        <div className='absolute -left-24 top-10 h-72 w-72 rounded-full bg-gold-500/20 blur-3xl' />
-        <div className='absolute right-0 top-28 h-80 w-80 rounded-full bg-yellow-500/10 blur-3xl' />
-        <div className='absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-amber-400/10 blur-3xl' />
-      </div>
+    <div className='relative min-h-screen overflow-hidden text-white'>
+      {/* ------ Glowing Background Color ------- */}
+      <GlowingBackground />
 
       <div className='relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-10 sm:px-6 lg:px-8'>
-        <header className='mb-8 flex items-center justify-between'>
-          <Link href='/' className='text-white font-bold tracking-tight'>
-            LO<span className='text-gold-500'>OP</span>
-          </Link>
-          <Link
-            href='/'
-            className='rounded-full border border-gray-700 bg-gray-950/60 px-4 py-2 text-sm text-gray-200 hover:border-gray-500'
-          >
-            Back home
-          </Link>
-        </header>
 
         <main className='flex-1'>
           <section className='mx-auto max-w-3xl text-center'>
@@ -140,6 +127,12 @@ export default function HowItWorksPage() {
                 className='rounded-full border border-gray-700 bg-gray-950/60 px-6 py-3 text-sm text-gray-200 hover:border-gray-500'
               >
                 Sign in
+              </Link>
+              <Link
+                href='/'
+                className='rounded-full border border-gray-700 bg-gray-950/60 px-6 py-3 text-sm text-gray-200 hover:border-gray-500'
+              >
+                Back to Home
               </Link>
             </div>
           </section>

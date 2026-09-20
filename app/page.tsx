@@ -11,7 +11,9 @@ import {
   FiShield,
   FiZap,
 } from 'react-icons/fi'
-import Counter from './components/Counter'
+import Counter from './components/Counter';
+import GlowingBackground from './components/GlowingBackground';
+import Navbar from './components/Navbar';
 
 const FEATURES = [
   {
@@ -102,65 +104,12 @@ export default function LandingPage() {
 
   return (
     <>
-      <style jsx>{`
-        .gold-ambient {
-          position: absolute;
-          filter: blur(80px);
-          border-radius: 9999px;
-          opacity: 0.7;
-          animation: floatGlow 12s ease-in-out infinite alternate;
-        }
-
-        .gold-ambient.one {
-          width: 26rem;
-          height: 26rem;
-          left: -4rem;
-          top: 4rem;
-          background: rgba(245, 197, 62, 0.28);
-          animation-delay: 0s;
-        }
-
-        .gold-ambient.two {
-          width: 30rem;
-          height: 30rem;
-          right: -6rem;
-          top: 8rem;
-          background: rgba(212, 175, 55, 0.18);
-          animation-delay: 2s;
-        }
-
-        .gold-ambient.three {
-          width: 22rem;
-          height: 22rem;
-          left: 30%;
-          bottom: 8rem;
-          background: rgba(251, 191, 36, 0.14);
-          animation-delay: 5s;
-        }
-
-        @keyframes floatGlow {
-          0% {
-            transform: translate3d(0, 0, 0) scale(0.96);
-            opacity: 0.45;
-          }
-          50% {
-            transform: translate3d(3rem, -2rem, 0) scale(1.08);
-            opacity: 0.75;
-          }
-          100% {
-            transform: translate3d(-2rem, 2rem, 0) scale(1.02);
-            opacity: 0.58;
-          }
-        }
-      `}</style>
-
       <div className='relative min-h-screen overflow-hidden bg-[#09090b] text-white'>
-        <div aria-hidden='true' className='pointer-events-none absolute inset-0 overflow-hidden'>
-          <div className='gold-ambient one' />
-          <div className='gold-ambient two' />
-          <div className='gold-ambient three' />
-          <div className='absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(245,197,62,0.12),_transparent_38%),radial-gradient(circle_at_bottom_right,_rgba(212,175,55,0.14),_transparent_34%)]' />
-        </div>
+
+        {/* ------ Glowing Background Color ------- */}
+        <GlowingBackground/>
+
+        <Navbar/>
 
         <div className='relative z-10 flex min-h-screen flex-col'>
 
