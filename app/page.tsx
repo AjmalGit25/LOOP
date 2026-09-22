@@ -183,7 +183,7 @@ export default function LandingPage() {
           <section className='px-4 sm:px-6 py-8 sm:py-10 max-w-5xl mx-auto w-full'>
             <div className='grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6 text-center'>
               {STATS.map(({ value, label }) => (
-                <div key={label} className='flex flex-col gap-1 rounded-xl border border-gray-800 bg-gray-950/70 p-3 sm:p-4'>
+                <div key={label} className='flex flex-col gap-1 rounded-xl border border-gray-800 bg-gray-950/70 p-3 sm:p-4 hover:border-gold-500/50 hover:shadow-xl transition-colors duration-200'>
                   <span className='text-2xl sm:text-3xl font-bold bg-linear-to-r from-gold-300 to-gold-600 bg-clip-text text-transparent'>
                     {label === "Feedback records analysed" ? (<Counter end={parseInt(value.replace(/,/g, ''))} duration={2000} className='text-2xl sm:text-3xl font-bold' />) : (value)}
                   </span>
